@@ -1,0 +1,6 @@
+@MoodleExtraction_HostAddress = http://localhost:5206
+
+GET {{MoodleExtraction_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

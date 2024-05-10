@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html  dir="ltr" lang="fr" xml:lang="fr">
+<head>
+    <title>CLASSES NUMERIQUES MAROC: Se connecter sur le site</title>
+    <link rel="shortcut icon" type="image/x-icon" href="//m3.inpt.ac.ma/pluginfile.php/1/theme_mb2nl/favicon/1714937217/favicon.ico">    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="//fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">    	    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="keywords" content="moodle, CLASSES NUMERIQUES MAROC: Se connecter sur le site" />
+<link rel="stylesheet" type="text/css" href="https://m3.inpt.ac.ma/theme/yui_combo.php?rollup/3.17.2/yui-moodlesimple-min.css" /><script id="firstthemesheet" type="text/css">/** Required in order to fix style inclusion problems in IE with YUI **/</script><link rel="stylesheet" type="text/css" href="https://m3.inpt.ac.ma/theme/styles.php/_s/mb2nl/1714937217_1/all" />
+<script>
+//<![CDATA[
+var M = {}; M.yui = {};
+M.pageloadstarttime = new Date();
+M.cfg = {"wwwroot":"https:\/\/m3.inpt.ac.ma","homeurl":{},"sesskey":"xQHHMOBsBD","sessiontimeout":"28800","sessiontimeoutwarning":"7200","themerev":"1714937217","slasharguments":1,"theme":"mb2nl","iconsystemmodule":"core\/icon_system_fontawesome","jsrev":"1714937217","admin":"admin","svgicons":false,"usertimezone":"Afrique\/Casablanca","courseId":1,"courseContextId":2,"contextid":1,"contextInstanceId":0,"langrev":1715226910,"templaterev":"1714937217"};var yui1ConfigFn = function(me) {if(/-skin|reset|fonts|grids|base/.test(me.name)){me.type='css';me.path=me.path.replace(/\.js/,'.css');me.path=me.path.replace(/\/yui2-skin/,'/assets/skins/sam/yui2-skin')}};
+var yui2ConfigFn = function(me) {var parts=me.name.replace(/^moodle-/,'').split('-'),component=parts.shift(),module=parts[0],min='-min';if(/-(skin|core)$/.test(me.name)){parts.pop();me.type='css';min=''}
+if(module){var filename=parts.join('-');me.path=component+'/'+module+'/'+filename+min+'.'+me.type}else{me.path=component+'/'+component+'.'+me.type}};
+YUI_config = {"debug":false,"base":"https:\/\/m3.inpt.ac.ma\/lib\/yuilib\/3.17.2\/","comboBase":"https:\/\/m3.inpt.ac.ma\/theme\/yui_combo.php?","combine":true,"filter":null,"insertBefore":"firstthemesheet","groups":{"yui2":{"base":"https:\/\/m3.inpt.ac.ma\/lib\/yuilib\/2in3\/2.9.0\/build\/","comboBase":"https:\/\/m3.inpt.ac.ma\/theme\/yui_combo.php?","combine":true,"ext":false,"root":"2in3\/2.9.0\/build\/","patterns":{"yui2-":{"group":"yui2","configFn":yui1ConfigFn}}},"moodle":{"name":"moodle","base":"https:\/\/m3.inpt.ac.ma\/theme\/yui_combo.php?m\/1714937217\/","combine":true,"comboBase":"https:\/\/m3.inpt.ac.ma\/theme\/yui_combo.php?","ext":false,"root":"m\/1714937217\/","patterns":{"moodle-":{"group":"moodle","configFn":yui2ConfigFn}},"filter":null,"modules":{"moodle-core-actionmenu":{"requires":["base","event","node-event-simulate"]},"moodle-core-blocks":{"requires":["base","node","io","dom","dd","dd-scroll","moodle-core-dragdrop","moodle-core-notification"]},"moodle-core-chooserdialogue":{"requires":["base","panel","moodle-core-notification"]},"moodle-core-dragdrop":{"requires":["base","node","io","dom","dd","event-key","event-focus","moodle-core-notification"]},"moodle-core-event":{"requires":["event-custom"]},"moodle-core-formchangechecker":{"requires":["base","event-focus","moodle-core-event"]},"moodle-core-handlebars":{"condition":{"trigger":"handlebars","when":"after"}},"moodle-core-languninstallconfirm":{"requires":["base","node","moodle-core-notification-confirm","moodle-core-notification-alert"]},"moodle-core-lockscroll":{"requires":["plugin","base-build"]},"moodle-core-maintenancemodetimer":{"requires":["base","node"]},"moodle-core-notification":{"requires":["moodle-core-notification-dialogue","moodle-core-notification-alert","moodle-core-notification-confirm","moodle-core-notification-exception","moodle-core-notification-ajaxexception"]},"moodle-core-notification-dialogue":{"requires":["base","node","panel","escape","event-key","dd-plugin","moodle-core-widget-focusafterclose","moodle-core-lockscroll"]},"moodle-core-notification-alert":{"requires":["moodle-core-notification-dialogue"]},"moodle-core-notification-confirm":{"requires":["moodle-core-notification-dialogue"]},"moodle-core-notification-exception":{"requires":["moodle-core-notification-dialogue"]},"moodle-core-notification-ajaxexception":{"requires":["moodle-core-notification-dialogue"]},"moodle-core-popuphelp":{"requires":["moodle-core-tooltip"]},"moodle-core-tooltip":{"requires":["base","node","io-base","moodle-core-notification-dialogue","json-parse","widget-position","widget-position-align","event-outside","cache-base"]},"moodle-core_availability-form":{"requires":["base","node","event","event-delegate","panel","moodle-core-notification-dialogue","json"]},"moodle-backup-backupselectall":{"requires":["node","event","node-event-simulate","anim"]},"moodle-backup-confirmcancel":{"requires":["node","node-event-simulate","moodle-core-notification-confirm"]},"moodle-course-categoryexpander":{"requires":["node","event-key"]},"moodle-course-dragdrop":{"requires":["base","node","io","dom","dd","dd-scroll","moodle-core-dragdrop","moodle-core-notification","moodle-course-coursebase","moodle-course-util"]},"moodle-course-management":{"requires":["base","node","io-base","moodle-core-notification-exception","json-parse","dd-constrain","dd-proxy","dd-drop","dd-delegate","node-event-delegate"]},"moodle-course-util":{"requires":["node"],"use":["moodle-course-util-base"],"submodules":{"moodle-course-util-base":{},"moodle-course-util-section":{"requires":["node","moodle-course-util-base"]},"moodle-course-util-cm":{"requires":["node","moodle-course-util-base"]}}},"moodle-form-dateselector":{"requires":["base","node","overlay","calendar"]},"moodle-form-passwordunmask":{"requires":[]},"moodle-form-shortforms":{"requires":["node","base","selector-css3","moodle-core-event"]},"moodle-question-chooser":{"requires":["moodle-core-chooserdialogue"]},"moodle-question-preview":{"requires":["base","dom","event-delegate","event-key","core_question_engine"]},"moodle-question-searchform":{"requires":["base","node"]},"moodle-availability_completion-form":{"requires":["base","node","event","moodle-core_availability-form"]},"moodle-availability_date-form":{"requires":["base","node","event","io","moodle-core_availability-form"]},"moodle-availability_grade-form":{"requires":["base","node","event","moodle-core_availability-form"]},"moodle-availability_group-form":{"requires":["base","node","event","moodle-core_availability-form"]},"moodle-availability_grouping-form":{"requires":["base","node","event","moodle-core_availability-form"]},"moodle-availability_profile-form":{"requires":["base","node","event","moodle-core_availability-form"]},"moodle-mod_assign-history":{"requires":["node","transition"]},"moodle-mod_quiz-autosave":{"requires":["base","node","event","event-valuechange","node-event-delegate","io-form"]},"moodle-mod_quiz-dragdrop":{"requires":["base","node","io","dom","dd","dd-scroll","moodle-core-dragdrop","moodle-core-notification","moodle-mod_quiz-quizbase","moodle-mod_quiz-util-base","moodle-mod_quiz-util-page","moodle-mod_quiz-util-slot","moodle-course-util"]},"moodle-mod_quiz-modform":{"requires":["base","node","event"]},"moodle-mod_quiz-questionchooser":{"requires":["moodle-core-chooserdialogue","moodle-mod_quiz-util","querystring-parse"]},"moodle-mod_quiz-quizbase":{"requires":["base","node"]},"moodle-mod_quiz-toolboxes":{"requires":["base","node","event","event-key","io","moodle-mod_quiz-quizbase","moodle-mod_quiz-util-slot","moodle-core-notification-ajaxexception"]},"moodle-mod_quiz-util":{"requires":["node","moodle-core-actionmenu"],"use":["moodle-mod_quiz-util-base"],"submodules":{"moodle-mod_quiz-util-base":{},"moodle-mod_quiz-util-slot":{"requires":["node","moodle-mod_quiz-util-base"]},"moodle-mod_quiz-util-page":{"requires":["node","moodle-mod_quiz-util-base"]}}},"moodle-message_airnotifier-toolboxes":{"requires":["base","node","io"]},"moodle-block_xp-rulepicker":{"requires":["base","node","handlebars","moodle-core-notification-dialogue"]},"moodle-block_xp-filters":{"requires":["base","node","moodle-core-dragdrop","moodle-core-notification-confirm","moodle-block_xp-rulepicker"]},"moodle-block_xp-notification":{"requires":["base","node","handlebars","button-plugin","moodle-core-notification-dialogue"]},"moodle-filter_glossary-autolinker":{"requires":["base","node","io-base","json-parse","event-delegate","overlay","moodle-core-event","moodle-core-notification-alert","moodle-core-notification-exception","moodle-core-notification-ajaxexception"]},"moodle-filter_mathjaxloader-loader":{"requires":["moodle-core-event"]},"moodle-editor_atto-editor":{"requires":["node","transition","io","overlay","escape","event","event-simulate","event-custom","node-event-html5","node-event-simulate","yui-throttle","moodle-core-notification-dialogue","moodle-core-notification-confirm","moodle-editor_atto-rangy","handlebars","timers","querystring-stringify"]},"moodle-editor_atto-plugin":{"requires":["node","base","escape","event","event-outside","handlebars","event-custom","timers","moodle-editor_atto-menu"]},"moodle-editor_atto-menu":{"requires":["moodle-core-notification-dialogue","node","event","event-custom"]},"moodle-editor_atto-rangy":{"requires":[]},"moodle-report_eventlist-eventfilter":{"requires":["base","event","node","node-event-delegate","datatable","autocomplete","autocomplete-filters"]},"moodle-report_loglive-fetchlogs":{"requires":["base","event","node","io","node-event-delegate"]},"moodle-gradereport_history-userselector":{"requires":["escape","event-delegate","event-key","handlebars","io-base","json-parse","moodle-core-notification-dialogue"]},"moodle-qbank_editquestion-chooser":{"requires":["moodle-core-chooserdialogue"]},"moodle-tool_capability-search":{"requires":["base","node"]},"moodle-tool_lp-dragdrop-reorder":{"requires":["moodle-core-dragdrop"]},"moodle-tool_monitor-dropdown":{"requires":["base","event","node"]},"moodle-assignfeedback_editpdf-editor":{"requires":["base","event","node","io","graphics","json","event-move","event-resize","transition","querystring-stringify-simple","moodle-core-notification-dialog","moodle-core-notification-alert","moodle-core-notification-warning","moodle-core-notification-exception","moodle-core-notification-ajaxexception"]},"moodle-atto_accessibilitychecker-button":{"requires":["color-base","moodle-editor_atto-plugin"]},"moodle-atto_accessibilityhelper-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_align-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_bold-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_charmap-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_clear-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_collapse-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_embedquestion-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_emojipicker-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_emoticon-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_equation-button":{"requires":["moodle-editor_atto-plugin","moodle-core-event","io","event-valuechange","tabview","array-extras"]},"moodle-atto_fullscreen-button":{"requires":["event-resize","moodle-editor_atto-plugin"]},"moodle-atto_h5p-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_html-beautify":{},"moodle-atto_html-button":{"requires":["promise","moodle-editor_atto-plugin","moodle-atto_html-beautify","moodle-atto_html-codemirror","event-valuechange"]},"moodle-atto_html-codemirror":{"requires":["moodle-atto_html-codemirror-skin"]},"moodle-atto_image-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_indent-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_italic-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_link-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_managefiles-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_managefiles-usedfiles":{"requires":["node","escape"]},"moodle-atto_media-button":{"requires":["moodle-editor_atto-plugin","moodle-form-shortforms"]},"moodle-atto_noautolink-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_orderedlist-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_recittakepicture-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_recordrtc-button":{"requires":["moodle-editor_atto-plugin","moodle-atto_recordrtc-recording"]},"moodle-atto_recordrtc-recording":{"requires":["moodle-atto_recordrtc-button"]},"moodle-atto_rtl-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_strike-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_subscript-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_superscript-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_table-button":{"requires":["moodle-editor_atto-plugin","moodle-editor_atto-menu","event","event-valuechange"]},"moodle-atto_title-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_underline-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_undo-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_unorderedlist-button":{"requires":["moodle-editor_atto-plugin"]},"moodle-atto_wiris-button":{"requires":["moodle-editor_atto-plugin","get"]},"moodle-atto_wordimport-button":{"requires":["moodle-editor_atto-plugin"]}}},"gallery":{"name":"gallery","base":"https:\/\/m3.inpt.ac.ma\/lib\/yuilib\/gallery\/","combine":true,"comboBase":"https:\/\/m3.inpt.ac.ma\/theme\/yui_combo.php?","ext":false,"root":"gallery\/1714937217\/","patterns":{"gallery-":{"group":"gallery"}}}},"modules":{"core_filepicker":{"name":"core_filepicker","fullpath":"https:\/\/m3.inpt.ac.ma\/lib\/javascript.php\/1714937217\/repository\/filepicker.js","requires":["base","node","node-event-simulate","json","async-queue","io-base","io-upload-iframe","io-form","yui2-treeview","panel","cookie","datatable","datatable-sort","resize-plugin","dd-plugin","escape","moodle-core_filepicker","moodle-core-notification-dialogue"]},"core_comment":{"name":"core_comment","fullpath":"https:\/\/m3.inpt.ac.ma\/lib\/javascript.php\/1714937217\/comment\/comment.js","requires":["base","io-base","node","json","yui2-animation","overlay","escape"]},"mathjax":{"name":"mathjax","fullpath":"https:\/\/cdn.jsdelivr.net\/npm\/mathjax@2.7.9\/MathJax.js?delayStartupUntil=configured"}}};
+M.yui.loader = {modules: {}};
+
+//]]>
+</script>
+
+<meta name="robots" content="noindex" />	</head>
+<body  id="page-login-index" class="format-site  path-login dir-ltr lang-fr yui-skin-sam yui3-skin-sam m3-inpt-ac-ma pagelayout-login course-1 context-1 notloggedin theme-lfw noediting fsmod0 nobuilderpage custom-login not_loggedin coursegrid1 navanim1 sticky-nav0 coursetheme- hide-sidebars nosidebar-case css_rbxt css_6wum editing-fw blockstyle-minimal theader_light tnavheader tnavheader_light navaligncenter" style="background-image:url('//m3.inpt.ac.ma/pluginfile.php/1/theme_mb2nl/loginbgimage/1714937217/login-server.png');">
+<div>
+    <a class="sr-only sr-only-focusable" href="#main-navigation">Skip to navigation</a>
+    <a class="sr-only sr-only-focusable" href="#themeskipto-mobilenav">Skip to navigation</a>
+    <a class="sr-only sr-only-focusable" href="#themeskipto-search">Skip to search form</a>
+    <a class="sr-only sr-only-focusable" href="#themeskipto-login">Skip to login form</a>
+    <a class="sr-only sr-only-focusable" href="#footer">Skip to footer</a>
+    <a class="sr-only sr-only-focusable" href="#maincontent">Passer au contenu principal</a>
+</div><script src="https://m3.inpt.ac.ma/lib/javascript.php/1714937217/lib/polyfills/polyfill.js"></script>
+<script src="https://m3.inpt.ac.ma/theme/yui_combo.php?rollup/3.17.2/yui-moodlesimple-min.js"></script><script src="https://m3.inpt.ac.ma/theme/jquery.php/core/jquery-3.6.0.min.js"></script>
+<script src="https://m3.inpt.ac.ma/lib/javascript.php/1714937217/lib/javascript-static.js"></script>
+<script>
+//<![CDATA[
+document.body.className += ' jsenabled';
+//]]>
+</script>
+
+<div id="page-outer">
+<div id="page">
+<div id="page-a">
+<div class="logo-wrap">
+	<div class="main-logo">
+		<a href="https://m3.inpt.ac.ma/" title="CLASSES NUMERIQUES MAROC">
+			<img class="logo-light no_svg" src="//m3.inpt.ac.ma/pluginfile.php/1/theme_mb2nl/logo/1714937217/logo_CN.png" alt="CLASSES NUMERIQUES MAROC"><img class="logo-dark no_svg" src="//m3.inpt.ac.ma/pluginfile.php/1/theme_mb2nl/logodark/1714937217/logo_CN.png" alt="CLASSES NUMERIQUES MAROC"><img class="logo-small no_svg" src="//m3.inpt.ac.ma/pluginfile.php/1/theme_mb2nl/logosm/1714937217/logoCNsmall.png" alt="CLASSES NUMERIQUES MAROC"><img class="logo-dark-small no_svg" src="//m3.inpt.ac.ma/pluginfile.php/1/theme_mb2nl/logodarksm/1714937217/logoCNsmall.png" alt="CLASSES NUMERIQUES MAROC">		</a>
+	</div>
+</div>
+</div><!-- //end #page-a -->
+<div id="page-b">
+<div id="main-content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12">
+            	<div id="page-content">
+					                	<span class="notifications" id="user-notifications"></span>										                	<div role="main"><span id="maincontent"></span><div class="loginform">
+        <h1 class="login-heading mb-4">Connexion à CLASSES NUMERIQUES MAROC</h1>
+    <form class="login-form" action="https://m3.inpt.ac.ma/login/index.php" method="post" id="login">
+        <input type="hidden" name="logintoken" value="q0hOgEENRrxU1GcNBDizjP234MXJ0HBQ">
+        <div class="login-form-username form-group">
+            <label for="username" class="sr-only">
+                    Nom d'utilisateur ou courriel
+            </label>
+            <input type="text" name="username" id="username" class="form-control form-control-lg" value="" placeholder="Nom d&#039;utilisateur ou courriel" autocomplete="username">
+        </div>
+        <div class="login-form-password form-group">
+            <label for="password" class="sr-only">Mot de passe</label>
+            <input type="password" name="password" id="password" value="" class="form-control form-control-lg" placeholder="Mot de passe" autocomplete="current-password">
+        </div>
+        <div class="login-form-submit form-group">
+            <button class="btn btn-primary btn-lg" type="submit" id="loginbtn">Connexion</button>
+        </div>
+        <div class="login-form-forgotpassword form-group">
+            <a href="https://m3.inpt.ac.ma/login/forgot_password.php">Mot de passe perdu ?</a>
+        </div>
+    </form>
+    <div class="login-divider"></div>
+    <div class="d-flex">
+            <div class="login-languagemenu">
+                <div class="action-menu moodle-actionmenu" id="action-menu-0" data-enhance="moodle-core-actionmenu">
+                
+                        <div class="menubar d-flex " id="action-menu-0-menubar">
+                
+                            
+                
+                
+                                <div class="action-menu-trigger">
+                                    <div class="dropdown">
+                                        <a href="#" tabindex="0" class=" dropdown-toggle icon-no-margin" id="action-menu-toggle-0" aria-label="Français ‎(fr)‎" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" aria-controls="action-menu-0-menu">
+                                            
+                                            Français ‎(fr)‎
+                                                
+                                            <b class="caret"></b>
+                                        </a>
+                                            <div class="dropdown-menu menu dropdown-menu-right" id="action-menu-0-menu" data-rel="menu-content" aria-labelledby="action-menu-toggle-0" role="menu">
+                                                                                                <a href="https://m3.inpt.ac.ma/login/index.php?lang=en" class="dropdown-item menu-action" data-lang="en" lang="en" role="menuitem" tabindex="-1" aria-labelledby="actionmenuaction-1">
+                                                <span class="menu-action-text" id="actionmenuaction-1">English ‎(en)‎</span>
+                                        </a>
+                                                                                                <a href="https://m3.inpt.ac.ma/login/index.php?lang=_temp_bc6126bee3c31103b032c598cb023f8a" class="dropdown-item menu-action" data-lang="_temp_bc6126bee3c31103b032c598cb023f8a" lang="_temp_bc6126bee3c31103b032c598cb023f8a" role="menuitem" tabindex="-1" aria-labelledby="actionmenuaction-2">
+                                                <span class="menu-action-text" id="actionmenuaction-2">Français ‎(_temp_bc6126bee3c31103b032c598cb023f8a)‎</span>
+                                        </a>
+                                                                                                <a href="#" class="dropdown-item menu-action" role="menuitem" tabindex="-1" aria-labelledby="actionmenuaction-3">
+                                                <span class="menu-action-text" id="actionmenuaction-3">Français ‎(fr)‎</span>
+                                        </a>
+                                            </div>
+                                    </div>
+                                </div>
+                
+                        </div>
+                
+                </div>
+            </div>
+            <div class="divider border-left align-self-center mx-3"></div>
+        <button type="button" class="btn btn-secondary"  data-modal="alert" data-modal-title-str='["cookiesenabled", "core"]'  data-modal-content-str='["cookiesenabled_help_html", "core"]'>Avis relatif aux cookies</button>
+    </div>
+</div></div>                                                        	                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<footer id="footer" class="theme-footer dark1">
+	<div class="container-fluid">
+    	<div class="row">
+        	<div class="col-md-12">
+            	<div class="footer-content flexcols">
+					<div class="footer-text">
+						<p>Copyright (c) CLASSES NUMÉRIQUES - <span class="cyear">2024</span>. Tous droits réservés.</p>
+											</div>
+                	                </div>
+				<div class="footer-tools"><div class="tool_dataprivacy"><a href="https://m3.inpt.ac.ma/admin/tool/dataprivacy/summary.php">Résumé de conservation de données</a></div><a href="https://download.moodle.org/mobile?version=2022041901.1&amp;lang=fr&amp;iosappid=633359593&amp;androidappid=com.moodle.moodlemobile">Obtenir l'app mobile</a></div>     		</div>
+        </div>
+    </div>
+</footer>
+</div><!-- //end #page-b -->
+</div><!-- //end #page -->
+</div><!-- //end #page-outer -->
+<a href="#page" class="sr-only sr-only-focusable">Scroll to top</a>
+	<div id="header-modal-login" class="modal theme-modal-scale theme-forms login" role="dialog" tabindex="0" aria-labelledby="header-modal-login" aria-describedby="header-modal-login" aria-modal="true"><div class="modal-dialog" role="document"><div class="modal-content"><div class="theme-modal-container"><button class="close-container themereset" data-dismiss="modal" aria-label="Fermer">&times;</button><div class="theme-loginform"><h4>Connexion</h4><form id="header-form-login" method="post" action="https://m3.inpt.ac.ma/login/index.php"><div class="form-field"><label id="user"><i class="fa fa-user"></i></label><input id="login-username" type="text" name="username" placeholder="Nom d'utilisateur" /></div><div class="form-field"><label id="pass"><i class="fa fa-lock"></i></label><input id="login-password" type="password" name="password" placeholder="Mot de passe" /></div><input type="submit" id="submit" name="submit" value="Connexion" /><input type="hidden" name="logintoken" value="q0hOgEENRrxU1GcNBDizjP234MXJ0HBQ" /></form><p class="login-info"><a href="https://m3.inpt.ac.ma/login/forgot_password.php">Utilisateur: visiteur
+Mot de passe: visiteur</a></p></div><button class="themereset themekeynavonly" data-dismiss="modal">Fermer</button></div></div></div></div>	<div id="header-modal-search" class="modal theme-modal-scale theme-forms search" role="dialog" tabindex="0" aria-labelledby="header-modal-search" aria-describedby="header-modal-search" aria-modal="true"><div class="modal-dialog" role="document"><div class="modal-content"><div class="theme-modal-container"><button class="close-container themereset" data-dismiss="modal" aria-label="Fermer">&times;</button><div id="theme-searchcontainer" class="theme-searchform"><div class="form-inner"><form id="theme-search" action="https://m3.inpt.ac.ma/course/search.php"><input id="theme-searchbox" type="text" value="" placeholder="Rechercher" name="search"><button type="submit"><i class="fa fa-search"></i></button></form></div></div><button class="themereset themekeynavonly" data-dismiss="modal">Fermer</button></div></div></div></div>	<div id="header-modal-settings" class="modal theme-modal-scale theme-forms settings" role="dialog" tabindex="0" aria-labelledby="header-modal-settings" aria-describedby="header-modal-settings" aria-modal="true"><div class="modal-dialog" role="document"><div class="modal-content"><div class="theme-modal-container"><button class="close-container themereset" data-dismiss="modal" aria-label="Fermer">&times;</button><button class="themereset themekeynavonly" data-dismiss="modal">Fermer</button></div></div></div></div><script>
+//<![CDATA[
+var require = {
+    baseUrl : 'https://m3.inpt.ac.ma/lib/requirejs.php/1714937217/',
+    // We only support AMD modules with an explicit define() statement.
+    enforceDefine: true,
+    skipDataMain: true,
+    waitSeconds : 0,
+
+    paths: {
+        jquery: 'https://m3.inpt.ac.ma/lib/javascript.php/1714937217/lib/jquery/jquery-3.6.0.min',
+        jqueryui: 'https://m3.inpt.ac.ma/lib/javascript.php/1714937217/lib/jquery/ui-1.13.0/jquery-ui.min',
+        jqueryprivate: 'https://m3.inpt.ac.ma/lib/javascript.php/1714937217/lib/requirejs/jquery-private'
+    },
+
+    // Custom jquery config map.
+    map: {
+      // '*' means all modules will get 'jqueryprivate'
+      // for their 'jquery' dependency.
+      '*': { jquery: 'jqueryprivate' },
+      // Stub module for 'process'. This is a workaround for a bug in MathJax (see MDL-60458).
+      '*': { process: 'core/first' },
+
+      // 'jquery-private' wants the real jQuery module
+      // though. If this line was not here, there would
+      // be an unresolvable cyclic dependency.
+      jqueryprivate: { jquery: 'jquery' }
+    }
+};
+
+//]]>
+</script>
+<script src="https://m3.inpt.ac.ma/lib/javascript.php/1714937217/lib/requirejs/require.min.js"></script>
+<script>
+//<![CDATA[
+M.util.js_pending("core/first");
+require(['core/first'], function() {
+require(['core/prefetch'])
+;
+require(["media_videojs/loader"], function(loader) {
+    loader.setUp('fr');
+});;
+require(['theme_boost/loader']);;
+M.util.js_pending('theme_mb2nl/actions'); require(['theme_mb2nl/actions'], function(amd) {amd.Init(); M.util.js_complete('theme_mb2nl/actions');});;
+M.util.js_pending('theme_mb2nl/access'); require(['theme_mb2nl/access'], function(amd) {amd.focusClass(); M.util.js_complete('theme_mb2nl/access');});;
+M.util.js_pending('theme_mb2nl/sidebars'); require(['theme_mb2nl/sidebars'], function(amd) {amd.sidebarToggle(); M.util.js_complete('theme_mb2nl/sidebars');});;
+M.util.js_pending('theme_mb2nl/scrollpos'); require(['theme_mb2nl/scrollpos'], function(amd) {amd.panelLink(); M.util.js_complete('theme_mb2nl/scrollpos');});;
+
+;
+M.util.js_pending('core/notification'); require(['core/notification'], function(amd) {amd.init(1, []); M.util.js_complete('core/notification');});;
+M.util.js_pending('core/log'); require(['core/log'], function(amd) {amd.setConfig({"level":"warn"}); M.util.js_complete('core/log');});;
+M.util.js_pending('core/page_global'); require(['core/page_global'], function(amd) {amd.init(); M.util.js_complete('core/page_global');});;
+M.util.js_pending('core/utility'); require(['core/utility'], function(amd) {M.util.js_complete('core/utility');});
+    M.util.js_complete("core/first");
+});
+//]]>
+</script>
+<script src="https://m3.inpt.ac.ma/lib/javascript.php/1714937217/theme/mb2nl/assets/superfish/superfish.custom.js"></script>
+<script src="https://m3.inpt.ac.ma/lib/javascript.php/1714937217/theme/mb2nl/assets/js.cookie.js"></script>
+<script src="https://m3.inpt.ac.ma/lib/javascript.php/1714937217/theme/mb2nl/javascript/theme.js"></script>
+<script>
+//<![CDATA[
+M.str = {"moodle":{"lastmodified":"Modifi\u00e9 le","name":"Nom","error":"Erreur","info":"Information","yes":"Oui","no":"Non","cancel":"Annuler","morehelp":"Plus d'aide","loadinghelp":"Chargement\u2026","confirm":"Confirmer","areyousure":"Voulez-vous vraiment continuer\u00a0?","closebuttontitle":"Fermer","unknownerror":"Erreur inconnue","file":"Fichier","url":"URL","collapseall":"Tout replier","expandall":"Tout d\u00e9plier"},"repository":{"type":"Type","size":"Taille","invalidjson":"Cha\u00eene JSON non valide","nofilesattached":"Aucun fichier joint","filepicker":"S\u00e9lecteur de fichiers","logout":"D\u00e9connexion","nofilesavailable":"Aucun fichier disponible","norepositoriesavailable":"D\u00e9sol\u00e9, aucun de vos d\u00e9p\u00f4ts actuels ne peut retourner de fichiers dans le format requis.","fileexistsdialogheader":"Le fichier existe","fileexistsdialog_editor":"Un fichier de ce nom a d\u00e9j\u00e0 \u00e9t\u00e9 joint au texte que vous modifiez.","fileexistsdialog_filemanager":"Un fichier de ce nom a d\u00e9j\u00e0 \u00e9t\u00e9 joint","renameto":"Renommer \u00e0 \u00ab\u00a0{$a}\u00a0\u00bb","referencesexist":"Il y a {$a} liens qui pointent vers ce fichier","select":"S\u00e9lectionnez"},"admin":{"confirmdeletecomments":"Voulez-vous vraiment supprimer des commentaires\u00a0?","confirmation":"Confirmation"},"debug":{"debuginfo":"Info de d\u00e9bogage","line":"Ligne","stacktrace":"Trace de la pile"},"langconfig":{"labelsep":"&nbsp;"}};
+//]]>
+</script>
+<script>
+//<![CDATA[
+(function() {Y.use("moodle-filter_mathjaxloader-loader",function() {M.filter_mathjaxloader.configure({"mathjaxconfig":"\nMathJax.Hub.Config({\n    config: [\"Accessible.js\", \"Safe.js\"],\n    errorSettings: { message: [\"!\"] },\n    skipStartupTypeset: true,\n    messageStyle: \"none\"\n});\n","lang":"fr"});
+});
+M.util.help_popups.setup(Y);
+Y.use("moodle-core-popuphelp",function() {M.core.init_popuphelp();
+});
+ M.util.js_pending('random663d07ef350c65'); Y.on('domready', function() { M.util.js_complete("init");  M.util.js_complete('random663d07ef350c65'); });
+})();
+//]]>
+</script>
+</body>
+</html>
