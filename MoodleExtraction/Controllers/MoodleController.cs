@@ -4,39 +4,37 @@ using System.Text.Json;
 using System.Text;
 using static MoodleExtraction.Controllers.MoodleController;
 using System.Xml;
+using System.IO.Compression;
+using static MoodleExtraction.Controllers.MoodleClient;
+using HtmlAgilityPack;
+using System.Diagnostics;
+using Microsoft.VisualBasic.FileIO;
 
 namespace MoodleExtraction.Controllers;
 [ApiController]
 [Route("[controller]")]
 public class MoodleController : ControllerBase
 {
-    private readonly HttpClient _httpClient;
+    private readonly MoodleClient _moodleClient;
 
     public MoodleController(IHttpClientFactory httpClientFactory)
     {
-        _httpClient = httpClientFactory.CreateClient();
-        _httpClient.BaseAddress = new Uri("https://m3.inpt.ac.ma");
+        var httpClient = httpClientFactory.CreateClient();
+        //httpClient.BaseAddress = new Uri("https://m3.inpt.ac.ma");
+        _moodleClient = new MoodleClient(httpClient);
     }
 
     [HttpGet("token")]
     public async Task<IActionResult> GetMoodleToken(string username, string password)
     {
-        try
+        var token = await _moodleClient.GetTokenAsync(username, password);
+        if (!string.IsNullOrEmpty(token))
         {
-            var token = await GetTokenFromMoodle(username, password);
-
-            if (!string.IsNullOrEmpty(token))
-            {
-                return Ok(token);
-            }
-            else
-            {
-                return BadRequest("Failed to get Moodle token");
-            }
+            return Ok(token);
         }
-        catch (Exception ex)
+        else
         {
-            return StatusCode(500, $"Error: {ex.Message}");
+            return BadRequest("Failed to get Moodle token");
         }
     }
 
@@ -45,68 +43,22 @@ public class MoodleController : ControllerBase
     {
         try
         {
-            var courses = await GetCoursesFromMoodle(token, "1");
-
+            var courses = await _moodleClient.GetCourses(token);
             return Ok(courses);
         }
         catch (Exception ex)
         {
-            return StatusCode(500, $"Error: {ex.Message}");
+            return StatusCode(500, $"Error retrieving courses: {ex.Message}");
         }
     }
-
-    private async Task<string> GetTokenFromMoodle(string username, string password)
-    {
-        try
-        {
-            // Prepare Moodle token request
-            var content = new StringContent($"username={username}&password={password}&service=moodle_mobile_app", Encoding.UTF8, "application/x-www-form-urlencoded");
-
-            // Send request to Moodle API
-            var response = await _httpClient.PostAsync("/login/token.php", content);
-
-            // Check if request was successful
-            response.EnsureSuccessStatusCode();
-
-            // Read response content
-            var responseContent = await response.Content.ReadAsStringAsync();
-            var tokenResponse = JsonSerializer.Deserialize<TokenResponse>(responseContent);
-
-            return tokenResponse?.token;
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"Error getting token from Moodle: {ex.Message}");
-        }
-    }
-
-    private async Task<List<Course>> GetCoursesFromMoodle(string token,string courseId)
-    {
-        try
-        {
-            // Prepare Moodle courses request
-            var response = await _httpClient.GetAsync($"/webservice/rest/server.php?wstoken={token}&wsfunction=core_course_get_courses&options[ids][0]={courseId}");
-
-            // Check if request was successful
-            response.EnsureSuccessStatusCode();
-
-            // Read response content
-            var responseContent = await response.Content.ReadAsStringAsync();
-            var coursesResponse = JsonSerializer.Deserialize<CoursesResponse>(responseContent);
-
-            return coursesResponse?.courses;
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"Error getting courses from Moodle: {ex.Message}");
-        }
-    }
-    [HttpGet("download")]
+    [HttpGet("download/{courseId}")]
     public async Task<IActionResult> DownloadCourse(string token, int courseId)
     {
         try
         {
-            var courseContent = await GetCourseContent(token, courseId);
+            //await _moodleClient.Login("alexsys", "Alexsys@24"); 
+
+            var courseContent = await _moodleClient.DownloadCourseContent(token, courseId);
             if (courseContent == null)
             {
                 return NotFound($"Course content not found for course with ID {courseId}.");
@@ -128,230 +80,175 @@ public class MoodleController : ControllerBase
             return StatusCode(500, $"Error: {ex.Message}");
         }
     }
-    [HttpGet("coursewithdata")]
-    public async Task<IActionResult> GetCourseWithData(string token)
-    {
-        try
-        {
-            var courses = await GetMoodleCoursesWithData(token);
 
-            return Ok(courses);
-        }
-        catch (Exception ex)
+
+
+
+
+
+
+
+
+
+}
+
+
+public class MoodleClient
+{
+    private readonly HttpClient _httpClient;
+    private readonly string _baseUri = "https://m3.inpt.ac.ma";
+
+    public MoodleClient(HttpClient httpClient)
+    {
+        var handler = new HttpClientHandler
         {
-            return StatusCode(500, $"Error: {ex.Message}");
-        }
+            CookieContainer = new System.Net.CookieContainer(),
+            UseCookies = true,
+            UseDefaultCredentials = false
+        };
+        _httpClient = new HttpClient(handler)
+        {
+            BaseAddress = new Uri(_baseUri)
+        };
     }
-    private async Task<List<Course>> GetMoodleCoursesWithData(string token)
+    public async Task Login(string username, string password)
     {
-        try
+        var loginData = new FormUrlEncodedContent(new[]
         {
+            new KeyValuePair<string, string>("username", username),
+            new KeyValuePair<string, string>("password", password)
+        });
 
-            // Get user ID
-           // var userId = await GetUserId(token);
-
-            // Prepare Moodle courses request for the current user
-            var response = await _httpClient.GetAsync($"/webservice/rest/server.php?wstoken={token}&wsfunction=core_enrol_get_users_courses&userid={298}");
-
-            // Check if request was successful
-            response.EnsureSuccessStatusCode();
-
-            // Read response content
-            var responseContent = await response.Content.ReadAsStringAsync();
-            var coursesResponse = JsonSerializer.Deserialize<CoursesResponse>(responseContent);
-
-            return coursesResponse.courses;
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"Error getting courses from Moodle: {ex.Message}");
-        }
+        var response = await _httpClient.PostAsync("/login/index.php", loginData);
+        response.EnsureSuccessStatusCode();
     }
-    private async Task<int> GetUserId(string token)
+    public async Task<string> GetTokenAsync(string username, string password)
     {
-        try
+        var content = new FormUrlEncodedContent(new[]
         {
-            // Prepare Moodle site info request
-            var response = await _httpClient.GetAsync($"/webservice/rest/server.php?wstoken={token}&wsfunction=core_webservice_get_site_info");
+            new KeyValuePair<string, string>("username", username),
+            new KeyValuePair<string, string>("password", password),
+            new KeyValuePair<string, string>("service", "moodle_mobile_app")
+        });
 
-            // Check if request was successful
-            response.EnsureSuccessStatusCode();
-
-            // Read response content
-            var responseContent = await response.Content.ReadAsStringAsync();
-            var siteInfoResponse = JsonSerializer.Deserialize<SiteInfoResponse>(responseContent);
-
-            return siteInfoResponse.userid;
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"Error getting user ID from Moodle: {ex.Message}");
-        }
+        var response = await _httpClient.PostAsync("/login/token.php", content);
+        response.EnsureSuccessStatusCode();
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var tokenResponse = JsonSerializer.Deserialize<TokenResponse>(responseContent);
+        return tokenResponse?.token!;
     }
-    private async Task<List<CourseContentItem>> GetCourseContent(string token, int courseId)
+
+    public async Task<object> GetCourses(string token)
     {
-        try
+        var response = await _httpClient.GetAsync($"/webservice/rest/server.php?wstoken={token}&wsfunction=core_course_get_courses");
+        response.EnsureSuccessStatusCode();
+        var responseContent = await response.Content.ReadAsStringAsync();
+        return JsonSerializer.Deserialize<object>(responseContent)!;
+    }
+
+    public async Task<List<CourseContentItem>> DownloadCourseContent(string token, int courseId)
+    {
+        var url = $"/webservice/rest/server.php?wstoken={token}&wsfunction=core_course_get_contents&courseid={courseId}";
+        var response = await _httpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        var contentString = await response.Content.ReadAsStringAsync();
+        var courseContent = new List<CourseContentItem>();
+
+        // Parse the XML response
+        var xmlDoc = new XmlDocument();
+        xmlDoc.LoadXml(contentString);
+
+        var singleNodes = xmlDoc.SelectNodes("//SINGLE");
+
+        foreach (XmlNode singleNode in singleNodes!)
         {
-            // Login to Moodle
-            MoodleClient client = new MoodleClient("https://m3.inpt.ac.ma");
-            await client.LoginAsync("alexsys", "Alexsys@24");
-            // Prepare Moodle course content request
-            var response = await _httpClient.GetAsync($"/webservice/rest/server.php?wstoken={token}&wsfunction=core_course_get_contents&courseid={courseId}");
+            var typeNode = singleNode.SelectSingleNode("KEY[@name='type']/VALUE");
+            var fileNameNode = singleNode.SelectSingleNode("KEY[@name='filename']/VALUE");
+            var fileUrlNode = singleNode.SelectSingleNode("KEY[@name='fileurl']/VALUE");
+            var fileSizeNode = singleNode.SelectSingleNode("KEY[@name='filesize']/VALUE");
+            var contentNode = singleNode.SelectSingleNode("KEY[@name='content']/VALUE");
+            var module = singleNode.SelectSingleNode("KEY[@name='url']/VALUE");
+            var moduleName = singleNode.SelectSingleNode("KEY[@name='name']/VALUE");
 
-            // Check if request was successful
-            response.EnsureSuccessStatusCode();
-
-            // Read response content
-            var responseContent = await response.Content.ReadAsStringAsync();
-            var courseContent = new List<CourseContentItem>();
-
-            // Parse XML response
-            var xmlDoc = new XmlDocument();
-            xmlDoc.LoadXml(responseContent);
-            var contentNodes = xmlDoc.SelectNodes("//RESPONSE/MULTIPLE/SINGLE");
-            foreach (XmlNode contentNode in contentNodes)
+            if (module != null && module.InnerText.Contains("hvp"))
             {
-                var modulesNode = contentNode.SelectSingleNode("KEY[@name='modules']");
-                if (modulesNode != null)
+                string fileUrl = module.InnerText + "&token=" + token;
+                string fileName = moduleName!.InnerText  ;
+                byte[] fileContent = await DownloadFileContent(fileUrl);
+                courseContent.Add(new CourseContentItem
                 {
-                    var moduleNodes = modulesNode.SelectNodes("MULTIPLE/SINGLE");
-                    foreach (XmlNode moduleNode in moduleNodes)
+                    Type = "html",
+                    FileName = fileName,
+                    Content = fileContent
+                });
+                Console.WriteLine("one");
+            }
+        
+            if (fileUrlNode != null && fileNameNode != null)
+            {
+                string fileUrl = fileUrlNode.InnerText + "&token="+ token;
+                string fileName = fileNameNode.InnerText;
+
+                string fileType = typeNode != null ? typeNode.InnerText : string.Empty;
+                if (fileType == "file")
+                {
+                    byte[] fileContent = await DownloadFileContent(fileUrl);
+
+                    courseContent.Add(new CourseContentItem
                     {
-                        var moduleUrlNode = moduleNode.SelectSingleNode("KEY[@name='url']/VALUE");
-                        var moduleNameNode = moduleNode.SelectSingleNode("KEY[@name='name']/VALUE");
-                        if (moduleUrlNode != null && moduleNameNode != null)
+                        Type = fileType,
+                        FileName = fileName,
+                        Content = fileContent
+                    });
+                }
+            }
+      /*      if (contentNode != null && !string.IsNullOrEmpty(contentNode.InnerText))
+            {
+                var htmlDoc = new HtmlDocument();
+                htmlDoc.LoadHtml(contentNode.InnerText);
+
+                var h5pLinks = htmlDoc.DocumentNode.SelectNodes("//div[contains(@class, 'h5p-content')]/iframe");
+                if (h5pLinks != null)
+                {
+                    foreach (var link in h5pLinks)
+                    {
+                        string h5pUrl = link.GetAttributeValue("src", string.Empty);
+                        if (!string.IsNullOrEmpty(h5pUrl))
                         {
-                            string moduleUrl = moduleUrlNode.InnerText;
-                            string moduleName = moduleNameNode.InnerText;
-                            // Download module content
-                            byte[] moduleContents = await client.DownloadModuleContent(moduleUrl);
-
-                            // Convert byte[] to string
-                            string htmlContent = Encoding.UTF8.GetString(moduleContents);
-
-                            byte[] moduleContent = await DownloadModuleContent(moduleUrl);
+                            // Download H5P content (this might need to be adapted based on actual content type and handling requirements)
+                            byte[] h5pContent = await DownloadFileContent(h5pUrl + (h5pUrl.Contains("?") ? "&" : "?") + "token=" + token);
                             courseContent.Add(new CourseContentItem
                             {
-                                Type = "Module",
-                                FileName = moduleName,
-                                Content = moduleContent
+                                Type = "H5P",
+                                FileName = "H5PContent.html",  // You may want to generate a meaningful name based on the content
+                                Content = h5pContent
                             });
                         }
                     }
                 }
-
-                var summaryNode = contentNode.SelectSingleNode("KEY[@name='summary']/VALUE");
-                if (summaryNode != null && !string.IsNullOrEmpty(summaryNode.InnerText))
-                {
-                    courseContent.Add(new CourseContentItem
-                    {
-                        Type = "Summary",
-                        FileName = "summary.txt",
-                        Content = Encoding.UTF8.GetBytes(summaryNode.InnerText)
-                    });
-                }
             }
+      */
+        }
+        return courseContent;
 
-            return courseContent;
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"Error getting course content from Moodle: {ex.Message}");
-        }
+
     }
-    private async Task<byte[]> DownloadModuleContent(string moduleUrl)
+    private async Task<byte[]> DownloadFileContent(string fileUrl)
     {
-        var response = await _httpClient.GetAsync(moduleUrl);
+        var response = await _httpClient.GetAsync(fileUrl);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsByteArrayAsync();
     }
-    // Classes for deserialization
-    public class TokenResponse
-    {
-        public string token { get; set; }
-    }
 
-    public class CoursesResponse
+    private class TokenResponse
     {
-        public List<Course> courses { get; set; }
-    }
-
-    public class Course
-    {
-        public int id { get; set; }
-        public string fullname { get; set; }
+        public string? token { get; set; }
     }
     public class CourseContentItem
     {
-        public string Type { get; set; }
-        public string FileName { get; set; }
-        public byte[] Content { get; set; }
-    }
-    public class UsersResponse
-    {
-        public List<User> users { get; set; }
+        public string? Type { get; set; }
+        public string? FileName { get; set; }
+        public byte[]? Content { get; set; }
     }
 
-    public class User
-    {
-        public int id { get; set; }
-        public string username { get; set; }
-        // Add other user properties as needed
-    }
-    public class SiteInfoResponse
-    {
-        public int userid { get; set; }
-        // Add other properties as needed
-    }
-
-
-
-
-
-
-
-    class MoodleClient
-    {
-        private readonly HttpClient _httpClient;
-        private readonly string _moodleUrl;
-        private string _token;
-
-        public MoodleClient(string moodleUrl)
-        {
-            _httpClient = new HttpClient();
-            _moodleUrl = moodleUrl.TrimEnd('/');
-        }
-
-        public async Task LoginAsync(string username, string password)
-        {
-            string loginUrl = $"{_moodleUrl}/login/token.php";
-
-            var parameters = new FormUrlEncodedContent(new[]
-            {
-                new KeyValuePair<string, string>("username", username),
-                new KeyValuePair<string, string>("password", password),
-                new KeyValuePair<string, string>("service", "moodle_mobile_app")
-            });
-
-            var response = await _httpClient.PostAsync(loginUrl, parameters);
-            response.EnsureSuccessStatusCode();
-
-            string responseString = await response.Content.ReadAsStringAsync();
-            _token = responseString.Trim('"');
-        }
-
-        public async Task<byte[]> DownloadModuleContent(string moduleUrl)
-        {
-            if (string.IsNullOrEmpty(_token))
-            {
-                throw new InvalidOperationException("You must login first");
-            }
-
-            string fullUrl = $"{moduleUrl}&token={_token}";
-            var response = await _httpClient.GetAsync(fullUrl);
-            response.EnsureSuccessStatusCode();
-
-            return await response.Content.ReadAsByteArrayAsync();
-        }
-    }
 }
