@@ -10,7 +10,13 @@ using HtmlAgilityPack;
 using System.Diagnostics;
 using Microsoft.VisualBasic.FileIO;
 
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
+
+
 namespace MoodleExtraction.Controllers;
+
+
 [ApiController]
 [Route("[controller]")]
 public class MoodleController : ControllerBase
@@ -51,6 +57,26 @@ public class MoodleController : ControllerBase
             return StatusCode(500, $"Error retrieving courses: {ex.Message}");
         }
     }
+
+
+    [HttpGet("frames")]
+    public async Task<IActionResult> GetFrames()
+    {
+        try
+        {
+           var result =  await _moodleClient.ExtractFrames();
+
+            return Ok(result);
+        }
+        catch (Exception)
+        {
+
+            throw;
+        }
+       
+    }
+
+
     [HttpGet("download/{courseId}")]
     public async Task<IActionResult> DownloadCourse(string token, int courseId)
     {
@@ -82,15 +108,10 @@ public class MoodleController : ControllerBase
     }
 
 
-
-
-
-
-
-
-
-
 }
+
+
+
 
 
 public class MoodleClient
@@ -122,6 +143,8 @@ public class MoodleClient
         var response = await _httpClient.PostAsync("/login/index.php", loginData);
         response.EnsureSuccessStatusCode();
     }
+
+
     public async Task<string> GetTokenAsync(string username, string password)
     {
         var content = new FormUrlEncodedContent(new[]
@@ -138,6 +161,7 @@ public class MoodleClient
         return tokenResponse?.token!;
     }
 
+
     public async Task<object> GetCourses(string token)
     {
         var response = await _httpClient.GetAsync($"/webservice/rest/server.php?wstoken={token}&wsfunction=core_course_get_courses");
@@ -145,6 +169,7 @@ public class MoodleClient
         var responseContent = await response.Content.ReadAsStringAsync();
         return JsonSerializer.Deserialize<object>(responseContent)!;
     }
+
 
     public async Task<List<CourseContentItem>> DownloadCourseContent(string token, int courseId)
     {
@@ -233,12 +258,57 @@ public class MoodleClient
 
 
     }
+
+
+    public async Task<HtmlDocument> ExtractFrames()
+    {
+        // Étape 1 : Lancement du navigateur Chrome
+        var options = new ChromeOptions();
+        options.AddArgument("--headless"); // Exécution en mode sans interface graphique
+
+
+        using (var driver = new ChromeDriver(options))
+        {
+            // Navigate to the login page
+            driver.Navigate().GoToUrl("https://m3.inpt.ac.ma/login/index.php");
+
+            // Fill in the login credentials and submit the form
+            driver.FindElement(By.Id("username")).SendKeys("alexsys");
+            driver.FindElement(By.Id("password")).SendKeys("Alexsys@24");
+            driver.FindElement(By.Id("loginbtn")).Click();
+
+            // Navigate to the protected page with the iFrame
+            driver.Navigate().GoToUrl("https://m3.inpt.ac.ma/mod/hvp/view.php?id=480");
+
+            // Switch to the iFrame
+            IWebElement iFrame = driver.FindElement(By.Id("mod_hvp_content"));
+            driver.SwitchTo().Frame(iFrame);
+
+            // Extract the full HTML content of the iFrame
+            string iFrameHtml = driver.FindElement(By.TagName("html")).GetAttribute("outerHTML");
+
+            // Do something with the iFrame HTML content
+            Console.WriteLine(iFrameHtml);
+
+            // Close the browser
+            driver.Quit();
+
+        }
+
+
+        return null;
+    }
+
+
     private async Task<byte[]> DownloadFileContent(string fileUrl)
     {
         var response = await _httpClient.GetAsync(fileUrl);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsByteArrayAsync();
     }
+
+
+
 
     private class TokenResponse
     {
