@@ -266,36 +266,50 @@ public class MoodleClient
         var options = new ChromeOptions();
         options.AddArgument("--headless"); // Exécution en mode sans interface graphique
 
+            using (var driver = new ChromeDriver(options))
+            {
+                // Navigate to the login page
+                driver.Navigate().GoToUrl("https://m3.inpt.ac.ma/login/index.php");
 
-        using (var driver = new ChromeDriver(options))
-        {
-            // Navigate to the login page
-            driver.Navigate().GoToUrl("https://m3.inpt.ac.ma/login/index.php");
+                // Fill in the login credentials and submit the form
+                driver.FindElement(By.Id("username")).SendKeys("alexsys");
+                driver.FindElement(By.Id("password")).SendKeys("Alexsys@24");
+                driver.FindElement(By.Id("loginbtn")).Click();
 
-            // Fill in the login credentials and submit the form
-            driver.FindElement(By.Id("username")).SendKeys("alexsys");
-            driver.FindElement(By.Id("password")).SendKeys("Alexsys@24");
-            driver.FindElement(By.Id("loginbtn")).Click();
+                // Navigate to the protected page with the iFrame
+                driver.Navigate().GoToUrl("https://m3.inpt.ac.ma/mod/hvp/view.php?id=480");
 
-            // Navigate to the protected page with the iFrame
-            driver.Navigate().GoToUrl("https://m3.inpt.ac.ma/mod/hvp/view.php?id=480");
+                
+                // Switch to the iFrame
+                IWebElement iFrame = driver.FindElement(By.Id("h5p-iframe-76"));
+                driver.SwitchTo().Frame(iFrame);
 
-            // Switch to the iFrame
-            IWebElement iFrame = driver.FindElement(By.Id("mod_hvp_content"));
-            driver.SwitchTo().Frame(iFrame);
+                    // >> Check and click the "h5p-dialogcards-next" button until it no longer exists
+                    bool buttonExists;
+                    int countTour = 0;  
+                    try
+                    {
+                        while (true)
+                        {
+                            driver.FindElement(By.ClassName("h5p-dialogcards-next")).Click();
+                            countTour++;
+                        }
+                    }
+                    catch
+                    {
+                        buttonExists = false;
+                    }
+                    finally
+                    {
+                          string iFrameHtml = driver.FindElement(By.TagName("html")).GetAttribute("outerHTML");
 
-            // Extract the full HTML content of the iFrame
-            string iFrameHtml = driver.FindElement(By.TagName("html")).GetAttribute("outerHTML");
+                          // Create a new iframe element
+                          IWebElement newIframe = driver.FindElement(By.TagName("body")).FindElement(By.TagName("iframe"));
+                           // Close the browser
+                          driver.Quit();
 
-            // Do something with the iFrame HTML content
-            Console.WriteLine(iFrameHtml);
-
-            // Close the browser
-            driver.Quit();
-
+                    }
         }
-
-
         return null;
     }
 
