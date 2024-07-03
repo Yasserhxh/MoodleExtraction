@@ -1,9 +1,14 @@
 ﻿using HtmlAgilityPack;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Interactions;
+using System.IO;
+using System.IO.Compression;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Xml;
 
 
@@ -99,9 +104,142 @@ public class MoodleController : ControllerBase
             return StatusCode(500, $"Error: {ex.Message}");
         }
     }
+    [HttpPost]
+    [Route("download-urls")]
+    public async Task<IActionResult> DownloadUrls(IFormFile file)
+    {
 
+        try
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("File is empty or not provided.");
+            }
 
+            var urls = new List<string>();
+
+            // Read URLs from the uploaded file
+            using (var reader = new StreamReader(file.OpenReadStream()))
+            {
+                while (!reader.EndOfStream)
+                {
+                    var line = await reader.ReadLineAsync();
+                    if (!string.IsNullOrWhiteSpace(line))
+                    {
+                        urls.Add(line.Trim());
+                    }
+                }
+            }
+
+            string courseDirectory = $"Course_{DateTime.Now:yyyyMMddHHmmss}";
+            Directory.CreateDirectory(courseDirectory);
+            string downloadDirectory = Path.GetFullPath(courseDirectory);
+
+            // Set up ChromeDriver options
+            var chromeOptions = new ChromeOptions();
+            chromeOptions.AddUserProfilePreference("download.default_directory", downloadDirectory);
+            chromeOptions.AddUserProfilePreference("download.prompt_for_download", false);
+            chromeOptions.AddUserProfilePreference("disable-popup-blocking", "true");
+
+            using (var driver = new ChromeDriver(chromeOptions))
+            {
+                driver.Navigate().GoToUrl("https://m3.inpt.ac.ma/login/index.php");
+                // Fill in the login credentials and submit the form
+                driver.FindElement(By.Id("username")).SendKeys("alexsys");
+                driver.FindElement(By.Id("password")).SendKeys("Alexsys@24");
+                driver.FindElement(By.Id("loginbtn")).Click();
+
+                await Task.Delay(1000); // Adjust the delay if necessary
+
+                foreach (var url in urls)
+                {
+                    try
+                    {
+                        driver.Navigate().GoToUrl(url);
+                        // Wait for the download to complete
+                        await WaitForDownloadToComplete(downloadDirectory, TimeSpan.FromMinutes(10));
+                        // Unzip downloaded files and delete the original zip files
+                        UnzipAndCreateIndexHtml(downloadDirectory);
+                    }
+                    catch (Exception ex)
+                    {
+                        // Handle exceptions as necessary
+                        Console.WriteLine($"Failed to download from URL: {url}. Error: {ex.Message}");
+                    }
+                }
+            }
+
+            return Ok($"Course content and files downloaded to {courseDirectory}.");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error: {ex.Message}");
+        }
+    }
+    private async Task WaitForDownloadToComplete(string downloadDirectory, TimeSpan timeout)
+    {
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        while (stopwatch.Elapsed < timeout)
+        {
+            if (Directory.GetFiles(downloadDirectory, "*.crdownload").Length == 0)
+            {
+                // No .crdownload files, which means the download is complete
+                break;
+            }
+
+            await Task.Delay(1000); // Check every second
+        }
+
+        stopwatch.Stop();
+    }
+    private void UnzipAndCreateIndexHtml(string directory)
+    {
+        foreach (var zipFilePath in Directory.GetFiles(directory, "*.h5p"))
+        {
+            string extractPath = Path.Combine(directory, Path.GetFileNameWithoutExtension(zipFilePath));
+            ZipFile.ExtractToDirectory(zipFilePath, extractPath);
+            System.IO.File.Delete(zipFilePath);
+
+            // Create index.html file next to the extracted folder
+            string indexPath = Path.Combine(directory, $"index_{Path.GetFileNameWithoutExtension(zipFilePath)}.html");
+            string folderName = Path.GetFileName(extractPath);
+            string indexContent = $@"
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>H5P Content Display</title>
+    <link rel='stylesheet' href='https://cdn.jsdelivr.net/npm/h5p-standalone@latest/dist/styles/h5p.css'>
+</head>
+<body>
+    <div id='h5p-container'></div>
+    <script src='https://code.jquery.com/jquery-3.6.0.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/h5p-standalone@latest/dist/main.bundle.js'></script>
+    <script>
+        const el = document.getElementById('h5p-container');
+        const options = {{
+            h5pJsonPath: '{folderName}',
+            frameJs: 'https://cdn.jsdelivr.net/npm/h5p-standalone@latest/dist/frame.bundle.js',
+            frameCss: 'https://cdn.jsdelivr.net/npm/h5p-standalone@latest/dist/styles/h5p.css',
+        }};
+        new H5PStandalone.H5P(el, options).then(() => {{
+            console.log('H5P content loaded successfully.');
+        }}).catch(err => {{
+            console.error('Failed to load H5P content:', err);
+        }});
+    </script>
+</body>
+</html>";
+
+            System.IO.File.WriteAllText(indexPath, indexContent);
+        }
+    }
 }
+
+
+
 
 
 
@@ -178,6 +316,9 @@ public class MoodleClient
 
         var singleNodes = xmlDoc.SelectNodes("//SINGLE");
 
+        // List to store exportUrls
+        List<string> files = new List<string>();
+        List<string> exportUrls = new List<string>();
         foreach (XmlNode singleNode in singleNodes!)
         {
             var typeNode = singleNode.SelectSingleNode("KEY[@name='type']/VALUE");
@@ -195,66 +336,67 @@ public class MoodleClient
                 // Initialize ChromeDriver and navigate to the page
                 var options = new ChromeOptions();
                 options.AddArgument("--headless"); // Run in headless mode (no GUI)
-                using (var driver = new ChromeDriver(options))
+                using var driver = new ChromeDriver(options);
+                // Navigate to the login page
+                driver.Navigate().GoToUrl("https://m3.inpt.ac.ma/login/index.php");
+                // Fill in the login credentials and submit the form
+                driver.FindElement(By.Id("username")).SendKeys("alexsys");
+                driver.FindElement(By.Id("password")).SendKeys("Alexsys@24");
+                driver.FindElement(By.Id("loginbtn")).Click();
+                // Wait for the login process to complete and redirect
+                await
+                Task.Delay(1000);
+                // Example: wait for 3 seconds (consider using WebDriverWait)
+                driver.Navigate().GoToUrl(fileUrl); // Replace with your URL
+
+                // Get all <script> elements
+                var scriptElements = driver.FindElements(By.TagName("script"));
+
+                // Iterate through each <script> element
+                foreach (var scriptElement in scriptElements)
                 {
-                    // Navigate to the login page
-                    driver.Navigate().GoToUrl("https://m3.inpt.ac.ma/login/index.php");
-                    // Fill in the login credentials and submit the form
-                    driver.FindElement(By.Id("username")).SendKeys("alexsys");
-                    driver.FindElement(By.Id("password")).SendKeys("Alexsys@24");
-                    driver.FindElement(By.Id("loginbtn")).Click();
-                    // Wait for the login process to complete and redirect
-                    await
-                    Task.Delay(3000);
-                    // Example: wait for 3 seconds (consider using WebDriverWait)
-                    driver.Navigate().GoToUrl(fileUrl); // Replace with your URL
-
-                    // Get all <script> elements
-                    var scriptElements = driver.FindElements(By.TagName("script"));
-
-                    // List to store exportUrls
-                    List<string> files = new List<string>();
-
-                    // Iterate through each <script> element
-                    foreach (var scriptElement in scriptElements)
+                    var scriptText = scriptElement.GetAttribute("innerHTML");
+                    if (scriptText.Contains("var H5PIntegration = "))
                     {
-                        var scriptText = scriptElement.GetAttribute("innerHTML");
-                        if (scriptText.Contains("var H5PIntegration = "))
-                        {
-                            Console.WriteLine("Found H5PIntegration script:");
-                            Console.WriteLine(scriptText);
+                        Console.WriteLine("Found H5PIntegration script:");
+                        Console.WriteLine(scriptText);
 
-                            string startPattern = "\r\n//<![CDATA[\r\nvar H5PIntegration = ";
-                            string endPattern = ";\r\n//]]>";
+                        string startPattern = "\r\n//<![CDATA[\r\nvar H5PIntegration = ";
+                        string endPattern = ";\r\n//]]>";
 
-                            // Extract JSON substring
-                            int startIndex = scriptText.IndexOf(startPattern) + startPattern.Length;
-                            int endIndex = scriptText.IndexOf(endPattern, startIndex);
-                            string jsonSubstring = scriptText.Substring(startIndex, endIndex - startIndex).Trim();
+                        // Extract JSON substring
+                        int startIndex = scriptText.IndexOf(startPattern) + startPattern.Length;
+                        int endIndex = scriptText.IndexOf(endPattern, startIndex);
+                        string jsonSubstring = scriptText.Substring(startIndex, endIndex - startIndex).Trim();
 
-                            // Deserialize JSON substring into JObject
-                            JObject jsonObject = JObject.Parse(jsonSubstring);
+                        // Deserialize JSON substring into JObject
+                        JsonNode jsonObject = JsonNode.Parse(jsonSubstring);
 
-                            // Access the value of "exportUrl" under "contents"
-                            string exportUrl = (string)jsonObject["contents"]["cid-76"]["exportUrl"];
-                            files.Add(exportUrl);
 
-                            break; // Exit loop if found
-                        }
+                        FindExportUrls(jsonObject["contents"], exportUrls);
+
+
+
+
+                        // Access the value of "exportUrl" under "contents"
+                        //string exportUrl = (string)jsonObject["contents"]["cid-76"]["exportUrl"];
+                        //files.Add(exportUrl);
+
+                        break; // Exit loop if found
                     }
-
-                    // Save exportUrls to a text file
-                    string filePath = "exportUrls.txt";
-                    using (StreamWriter writer = new StreamWriter(filePath))
-                    {
-                        foreach (var item in files)
-                        {
-                            writer.WriteLine(item);
-                        }
-                    }
-
-                    Console.WriteLine($"Exported {files.Count} URLs to {filePath}");
                 }
+
+                // Save exportUrls to a text file
+                string filePath = "exportUrls.txt";
+                using (StreamWriter writer = new StreamWriter(filePath))
+                {
+                    foreach (var item in exportUrls)
+                    {
+                        writer.WriteLine(item);
+                    }
+                }
+
+                Console.WriteLine($"Exported {files.Count} URLs to {filePath}");
             }
 
             if (fileUrlNode != null && fileNameNode != null)
@@ -275,39 +417,36 @@ public class MoodleClient
                     });
                 }
             }
-            /*      if (contentNode != null && !string.IsNullOrEmpty(contentNode.InnerText))
-                  {
-                      var htmlDoc = new HtmlDocument();
-                      htmlDoc.LoadHtml(contentNode.InnerText);
-
-                      var h5pLinks = htmlDoc.DocumentNode.SelectNodes("//div[contains(@class, 'h5p-content')]/iframe");
-                      if (h5pLinks != null)
-                      {
-                          foreach (var link in h5pLinks)
-                          {
-                              string h5pUrl = link.GetAttributeValue("src", string.Empty);
-                              if (!string.IsNullOrEmpty(h5pUrl))
-                              {
-                                  // Download H5P content (this might need to be adapted based on actual content type and handling requirements)
-                                  byte[] h5pContent = await DownloadFileContent(h5pUrl + (h5pUrl.Contains("?") ? "&" : "?") + "token=" + token);
-                                  courseContent.Add(new CourseContentItem
-                                  {
-                                      Type = "H5P",
-                                      FileName = "H5PContent.html",  // You may want to generate a meaningful name based on the content
-                                      Content = h5pContent
-                                  });
-                              }
-                          }
-                      }
-                  }
-            */
         }
         return courseContent;
 
 
     }
 
-
+    public void FindExportUrls(JsonNode node, List<string> exportUrls)
+    {
+        if (node is JsonObject obj)
+        {
+            foreach (var kvp in obj)
+            {
+                if (kvp.Key == "exportUrl" && kvp.Value is JsonValue val)
+                {
+                    exportUrls.Add(val.ToString());
+                }
+                else if (kvp.Value is JsonObject || kvp.Value is JsonArray)
+                {
+                    FindExportUrls(kvp.Value, exportUrls);
+                }
+            }
+        }
+        else if (node is JsonArray array)
+        {
+            foreach (var item in array)
+            {
+                FindExportUrls(item, exportUrls);
+            }
+        }
+    }
     public async Task<HtmlDocument> ExtractFrames()
     {
         // Étape 1 : Lancement du navigateur Chrome
