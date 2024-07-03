@@ -1,5 +1,6 @@
 ﻿using HtmlAgilityPack;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using System.Text.Json;
@@ -189,16 +190,71 @@ public class MoodleClient
 
             if (module != null && module.InnerText.Contains("hvp"))
             {
-                string fileUrl = module.InnerText + "&token=" + token;
-                string fileName = moduleName!.InnerText;
-                byte[] fileContent = await DownloadFileContent(fileUrl);
-                courseContent.Add(new CourseContentItem
+               
+                string fileUrl = module.InnerText;
+                // Initialize ChromeDriver and navigate to the page
+                var options = new ChromeOptions();
+                options.AddArgument("--headless"); // Run in headless mode (no GUI)
+                using (var driver = new ChromeDriver(options))
                 {
-                    Type = "html",
-                    FileName = fileName,
-                    Content = fileContent
-                });
-                Console.WriteLine("one");
+                    // Navigate to the login page
+                    driver.Navigate().GoToUrl("https://m3.inpt.ac.ma/login/index.php");
+                    // Fill in the login credentials and submit the form
+                    driver.FindElement(By.Id("username")).SendKeys("alexsys");
+                    driver.FindElement(By.Id("password")).SendKeys("Alexsys@24");
+                    driver.FindElement(By.Id("loginbtn")).Click();
+                    // Wait for the login process to complete and redirect
+                    await
+                    Task.Delay(3000);
+                    // Example: wait for 3 seconds (consider using WebDriverWait)
+                    driver.Navigate().GoToUrl(fileUrl); // Replace with your URL
+
+                    // Get all <script> elements
+                    var scriptElements = driver.FindElements(By.TagName("script"));
+
+                    // List to store exportUrls
+                    List<string> files = new List<string>();
+
+                    // Iterate through each <script> element
+                    foreach (var scriptElement in scriptElements)
+                    {
+                        var scriptText = scriptElement.GetAttribute("innerHTML");
+                        if (scriptText.Contains("var H5PIntegration = "))
+                        {
+                            Console.WriteLine("Found H5PIntegration script:");
+                            Console.WriteLine(scriptText);
+
+                            string startPattern = "\r\n//<![CDATA[\r\nvar H5PIntegration = ";
+                            string endPattern = ";\r\n//]]>";
+
+                            // Extract JSON substring
+                            int startIndex = scriptText.IndexOf(startPattern) + startPattern.Length;
+                            int endIndex = scriptText.IndexOf(endPattern, startIndex);
+                            string jsonSubstring = scriptText.Substring(startIndex, endIndex - startIndex).Trim();
+
+                            // Deserialize JSON substring into JObject
+                            JObject jsonObject = JObject.Parse(jsonSubstring);
+
+                            // Access the value of "exportUrl" under "contents"
+                            string exportUrl = (string)jsonObject["contents"]["cid-76"]["exportUrl"];
+                            files.Add(exportUrl);
+
+                            break; // Exit loop if found
+                        }
+                    }
+
+                    // Save exportUrls to a text file
+                    string filePath = "exportUrls.txt";
+                    using (StreamWriter writer = new StreamWriter(filePath))
+                    {
+                        foreach (var item in files)
+                        {
+                            writer.WriteLine(item);
+                        }
+                    }
+
+                    Console.WriteLine($"Exported {files.Count} URLs to {filePath}");
+                }
             }
 
             if (fileUrlNode != null && fileNameNode != null)
