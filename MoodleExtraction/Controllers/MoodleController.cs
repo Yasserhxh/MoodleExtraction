@@ -1,17 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using System.Net;
-using System.Text.Json;
-using System.Text;
-using static MoodleExtraction.Controllers.MoodleController;
-using System.Xml;
-using System.IO.Compression;
-using static MoodleExtraction.Controllers.MoodleClient;
-using HtmlAgilityPack;
-using System.Diagnostics;
-using Microsoft.VisualBasic.FileIO;
-
+﻿using HtmlAgilityPack;
+using Microsoft.AspNetCore.Mvc;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using System.Text.Json;
+using System.Xml;
 
 
 namespace MoodleExtraction.Controllers;
@@ -64,7 +56,7 @@ public class MoodleController : ControllerBase
     {
         try
         {
-           var result =  await _moodleClient.ExtractFrames();
+            var result = await _moodleClient.ExtractFrames();
 
             return Ok(result);
         }
@@ -73,7 +65,7 @@ public class MoodleController : ControllerBase
 
             throw;
         }
-       
+
     }
 
 
@@ -198,7 +190,7 @@ public class MoodleClient
             if (module != null && module.InnerText.Contains("hvp"))
             {
                 string fileUrl = module.InnerText + "&token=" + token;
-                string fileName = moduleName!.InnerText  ;
+                string fileName = moduleName!.InnerText;
                 byte[] fileContent = await DownloadFileContent(fileUrl);
                 courseContent.Add(new CourseContentItem
                 {
@@ -208,10 +200,10 @@ public class MoodleClient
                 });
                 Console.WriteLine("one");
             }
-        
+
             if (fileUrlNode != null && fileNameNode != null)
             {
-                string fileUrl = fileUrlNode.InnerText + "&token="+ token;
+                string fileUrl = fileUrlNode.InnerText + "&token=" + token;
                 string fileName = fileNameNode.InnerText;
 
                 string fileType = typeNode != null ? typeNode.InnerText : string.Empty;
@@ -227,32 +219,32 @@ public class MoodleClient
                     });
                 }
             }
-      /*      if (contentNode != null && !string.IsNullOrEmpty(contentNode.InnerText))
-            {
-                var htmlDoc = new HtmlDocument();
-                htmlDoc.LoadHtml(contentNode.InnerText);
+            /*      if (contentNode != null && !string.IsNullOrEmpty(contentNode.InnerText))
+                  {
+                      var htmlDoc = new HtmlDocument();
+                      htmlDoc.LoadHtml(contentNode.InnerText);
 
-                var h5pLinks = htmlDoc.DocumentNode.SelectNodes("//div[contains(@class, 'h5p-content')]/iframe");
-                if (h5pLinks != null)
-                {
-                    foreach (var link in h5pLinks)
-                    {
-                        string h5pUrl = link.GetAttributeValue("src", string.Empty);
-                        if (!string.IsNullOrEmpty(h5pUrl))
-                        {
-                            // Download H5P content (this might need to be adapted based on actual content type and handling requirements)
-                            byte[] h5pContent = await DownloadFileContent(h5pUrl + (h5pUrl.Contains("?") ? "&" : "?") + "token=" + token);
-                            courseContent.Add(new CourseContentItem
-                            {
-                                Type = "H5P",
-                                FileName = "H5PContent.html",  // You may want to generate a meaningful name based on the content
-                                Content = h5pContent
-                            });
-                        }
-                    }
-                }
-            }
-      */
+                      var h5pLinks = htmlDoc.DocumentNode.SelectNodes("//div[contains(@class, 'h5p-content')]/iframe");
+                      if (h5pLinks != null)
+                      {
+                          foreach (var link in h5pLinks)
+                          {
+                              string h5pUrl = link.GetAttributeValue("src", string.Empty);
+                              if (!string.IsNullOrEmpty(h5pUrl))
+                              {
+                                  // Download H5P content (this might need to be adapted based on actual content type and handling requirements)
+                                  byte[] h5pContent = await DownloadFileContent(h5pUrl + (h5pUrl.Contains("?") ? "&" : "?") + "token=" + token);
+                                  courseContent.Add(new CourseContentItem
+                                  {
+                                      Type = "H5P",
+                                      FileName = "H5PContent.html",  // You may want to generate a meaningful name based on the content
+                                      Content = h5pContent
+                                  });
+                              }
+                          }
+                      }
+                  }
+            */
         }
         return courseContent;
 
@@ -266,49 +258,80 @@ public class MoodleClient
         var options = new ChromeOptions();
         options.AddArgument("--headless"); // Exécution en mode sans interface graphique
 
-            using (var driver = new ChromeDriver(options))
+        using (var driver = new ChromeDriver(options))
+        {
+            // Navigate to the login page
+            driver.Navigate().GoToUrl("https://m3.inpt.ac.ma/login/index.php");
+            // Fill in the login credentials and submit the form
+            driver.FindElement(By.Id("username")).SendKeys("alexsys");
+            driver.FindElement(By.Id("password")).SendKeys("Alexsys@24");
+            driver.FindElement(By.Id("loginbtn")).Click();
+            // Navigate to the protected page with the iFrame
+            driver.Navigate().GoToUrl("https://m3.inpt.ac.ma/mod/hvp/view.php?id=480");
+            IWebElement iBody = driver.FindElement(By.Id("page-content"));
+
+            var element = driver.FindElement(By.Id("page-content")).GetAttribute("outerHTML");
+            //Switch to the iFrame
+            IWebElement iFrame = driver.FindElement(By.Id("h5p-iframe-76"));
+
+            driver.SwitchTo().Frame(iFrame);
+            try
             {
-                // Navigate to the login page
-                driver.Navigate().GoToUrl("https://m3.inpt.ac.ma/login/index.php");
+                while (driver.FindElement(By.ClassName("h5p-dialogcards-next")) != null)
+                {
+                    driver.FindElement(By.ClassName("h5p-dialogcards-next")).Click();
+                }
+            }
+            finally
+            {
+                string iFrameHtml = driver.FindElement(By.TagName("html")).GetAttribute("outerHTML");
 
-                // Fill in the login credentials and submit the form
-                driver.FindElement(By.Id("username")).SendKeys("alexsys");
-                driver.FindElement(By.Id("password")).SendKeys("Alexsys@24");
-                driver.FindElement(By.Id("loginbtn")).Click();
+                // Fetch the content of the iframe
+                string iframeContent = iFrameHtml;
 
-                // Navigate to the protected page with the iFrame
-                driver.Navigate().GoToUrl("https://m3.inpt.ac.ma/mod/hvp/view.php?id=480");
 
                 
-                // Switch to the iFrame
-                IWebElement iFrame = driver.FindElement(By.Id("h5p-iframe-76"));
-                driver.SwitchTo().Frame(iFrame);
 
-                    // >> Check and click the "h5p-dialogcards-next" button until it no longer exists
-                    bool buttonExists;
-                    int countTour = 0;  
-                    try
-                    {
-                        while (true)
-                        {
-                            driver.FindElement(By.ClassName("h5p-dialogcards-next")).Click();
-                            countTour++;
-                        }
-                    }
-                    catch
-                    {
-                        buttonExists = false;
-                    }
-                    finally
-                    {
-                          string iFrameHtml = driver.FindElement(By.TagName("html")).GetAttribute("outerHTML");
+                // Create a new HTML document with the iframe content
+                string newHtml = $@"
+                <!DOCTYPE html>
+                <html>
+                <head>
 
-                          // Create a new iframe element
-                          IWebElement newIframe = driver.FindElement(By.TagName("body")).FindElement(By.TagName("iframe"));
-                           // Close the browser
-                          driver.Quit();
+                    <title>New Iframe</title>
+                    <script src='Happy/h5p-action-bar.js'></script>
+                    <script src='Happy/h5p-confirmation-dialog.js'></script>
+                    <script src='Happy/h5p-content-type.js'></script>
+                    <script src='Happy/h5p-content-upgrade.js'></script>
+                    <script src='Happy/h5p-data-view.js'></script>
+                    <script src='Happy/h5p-display-options.js'></script>
+                    <script src='Happy/h5p-embed.js'></script>
+                    <script src='Happy/h5p-event-dispatcher.js'></script>
+                    <script src='Happy/h5p-hub-sharing.js'></script>
+                    <script src='Happy/h5p-library-list.js'></script>
+                    <script src='Happy/h5p-resizer.js'></script>
+                    <script src='Happy/h5p-tooltip.js'></script>
+                    <script src='Happy/h5p-utils.js'></script>
+                    <script src='Happy/h5p-version.js'></script>
+                    <script src='Happy/h5p-x-api.js'></script>
+                    <script src='Happy/h5p.js'></script>
+                </head>
+                <body>
+                    {iframeContent}
+                </body>
+                </html>
+                ";
 
-                    }
+                // Save the new HTML document as a file
+                string newIframeFilePath = "new_iframe.html";
+                File.WriteAllText(newIframeFilePath, newHtml);
+
+                // You can now use the new iframe file in your .NET application
+                string iframeTag = $"<iframe src=\"{newIframeFilePath}\"></iframe>";
+
+                // Create a new iframe element
+                //IWebElement newIframe = driver.FindElement(By.TagName("body")).FindElement(By.TagName("iframe"));
+            }
         }
         return null;
     }
