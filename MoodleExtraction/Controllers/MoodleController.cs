@@ -9,6 +9,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using System.Xml;
 
 
@@ -104,6 +105,138 @@ public class MoodleController : ControllerBase
             return StatusCode(500, $"Error: {ex.Message}");
         }
     }
+    [HttpGet("DownloadCoursesByCategorie/{token}/{category}")]
+    public async Task<IActionResult> DownloadCoursesByCategorie(string token, int category)
+    {
+        try
+        {
+            var courseContent = await _moodleClient.DownloadCourseContentCateg(token, category);
+            string courseDirectory = $"Course_with_categ_{category}_{DateTime.Now:yyyyMMddHHmmss}";
+            Directory.CreateDirectory(courseDirectory);
+
+            List<string> urls = new List<string>();
+
+            foreach (var course in courseContent.courses)
+            {
+                string summary = course.summary;
+                var extractedUrls = _moodleClient.ExtractUrls(summary);
+                urls.AddRange(extractedUrls);
+            }
+
+            // Use the new function to extract and store URLs
+            await _moodleClient.ExtractAndStoreUrls("alexsys", "Alexsys@24", urls);
+
+            return Ok($"Activity links extracted and stored in activityLinks.txt.");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error: {ex.Message}");
+        }
+    }
+    [HttpPost]
+    [Route("extract-export-urls")]
+    public async Task<IActionResult> ExtractExportUrls(IFormFile file)
+    {
+        try
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest("File is empty or not provided.");
+            }
+
+            var urls = new List<string>();
+
+            // Read URLs from the uploaded file
+            using (var reader = new StreamReader(file.OpenReadStream()))
+            {
+                while (!reader.EndOfStream)
+                {
+                    var line = await reader.ReadLineAsync();
+                    if (!string.IsNullOrWhiteSpace(line) && line.Contains("mod/hvp/"))
+                    {
+                        urls.Add(line.Trim());
+                    }
+                }
+            }
+
+            var exportUrls = new List<string>();
+            var chromeOptions = new ChromeOptions();
+            chromeOptions.AddArgument("--headless");
+
+            using (var driver = new ChromeDriver(chromeOptions))
+            {
+                driver.Navigate().GoToUrl("https://m3.inpt.ac.ma/login/index.php");
+                // Fill in the login credentials and submit the form
+                driver.FindElement(By.Id("username")).SendKeys("alexsys");
+                driver.FindElement(By.Id("password")).SendKeys("Alexsys@24");
+                driver.FindElement(By.Id("loginbtn")).Click();
+
+                await Task.Delay(2000); // Adjust the delay if necessary
+
+                foreach (var url in urls)
+                {
+                    try
+                    {
+                        driver.Navigate().GoToUrl(url);
+                        await Task.Delay(2000); // Adjust the delay if necessary
+
+                        // Get all <script> elements
+                        var scriptElements = driver.FindElements(By.TagName("script"));
+
+                        // Iterate through each <script> element
+                        foreach (var scriptElement in scriptElements)
+                        {
+                            var scriptText = scriptElement.GetAttribute("innerHTML");
+                            if (scriptText.Contains("var H5PIntegration = "))
+                            {
+                                Console.WriteLine("Found H5PIntegration script:");
+                                Console.WriteLine(scriptText);
+
+                                string startPattern = "\r\n//<![CDATA[\r\nvar H5PIntegration = ";
+                                string endPattern = ";\r\n//]]>";
+
+                                // Extract JSON substring
+                                int startIndex = scriptText.IndexOf(startPattern) + startPattern.Length;
+                                int endIndex = scriptText.IndexOf(endPattern, startIndex);
+                                string jsonSubstring = scriptText.Substring(startIndex, endIndex - startIndex).Trim();
+
+                                // Deserialize JSON substring into JsonNode
+                                JsonNode jsonObject = JsonNode.Parse(jsonSubstring);
+
+                                _moodleClient.FindExportUrls(jsonObject["contents"], exportUrls);
+
+                                break; // Exit loop if found
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Handle exceptions as necessary
+                        Console.WriteLine($"Failed to process URL: {url}. Error: {ex.Message}");
+                    }
+                }
+            }
+
+            // Save exportUrls to a text file
+            string filePath = "exportUrls.txt";
+            using (StreamWriter writer = new StreamWriter(filePath))
+            {
+                foreach (var item in exportUrls)
+                {
+                    writer.WriteLine(item);
+                }
+            }
+
+            Console.WriteLine($"Exported {exportUrls.Count} URLs to {filePath}");
+
+            return Ok($"Exported {exportUrls.Count} URLs to {filePath}");
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Error: {ex.Message}");
+        }
+    }
+   
     [HttpPost]
     [Route("download-urls")]
     public async Task<IActionResult> DownloadUrls(IFormFile file)
@@ -155,9 +288,10 @@ public class MoodleController : ControllerBase
                 {
                     try
                     {
-                        driver.Navigate().GoToUrl(url);
-                        // Wait for the download to complete
-                        await WaitForDownloadToComplete(downloadDirectory, TimeSpan.FromMinutes(10));
+                        driver.Navigate().GoToUrl(url); 
+                        //driver.Navigate().GoToUrl("https://m3.inpt.ac.ma/mod/hvp/view.php?id=494");
+						// Wait for the download to complete
+						await WaitForDownloadToComplete(downloadDirectory, TimeSpan.FromMinutes(10));
                         // Unzip downloaded files and delete the original zip files
                         UnzipAndCreateIndexHtml(downloadDirectory);
                     }
@@ -301,6 +435,16 @@ public class MoodleClient
         return JsonSerializer.Deserialize<object>(responseContent)!;
     }
 
+    public async Task<dynamic> DownloadCourseContentCateg(string token, int categoryId)
+    {
+        string url = $"webservice/rest/server.php?wstoken={token}&wsfunction=core_course_get_courses_by_field&moodlewsrestformat=json&field=category&value={categoryId}";
+
+        var response = await _httpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        var contentString = await response.Content.ReadAsStringAsync();
+        return JsonSerializer.Deserialize<CourseResponse>(contentString)!;
+
+    }
 
     public async Task<List<CourseContentItem>> DownloadCourseContent(string token, int courseId)
     {
@@ -530,16 +674,83 @@ public class MoodleClient
         }
         return null;
     }
+    public async Task<string> GetCourseContentAsync(string url)
+    {
+        var response = await _httpClient.GetAsync(url);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync();
+    }
+    public List<string> ExtractUrls(string summary)
+    {
+        var urls = new List<string>();
+        var regex = new Regex(@"href=\""([^\""]+)\""", RegexOptions.IgnoreCase);
+        var matches = regex.Matches(summary);
 
+        foreach (Match match in matches)
+        {
+            urls.Add(match.Groups[1].Value.Replace("&amp;", "&"));
+        }
 
-    private async Task<byte[]> DownloadFileContent(string fileUrl)
+        return urls;
+    }
+    public async Task ExtractAndStoreUrls(string username, string password, List<string> urls)
+    {
+        List<string> activityLinks = new List<string>();
+
+        var options = new ChromeOptions();
+        options.AddArgument("--headless");
+
+        using var driver = new ChromeDriver(options);
+
+        // Log in
+        driver.Navigate().GoToUrl("https://m3.inpt.ac.ma/login/index.php");
+        driver.FindElement(By.Id("username")).SendKeys(username);
+        driver.FindElement(By.Id("password")).SendKeys(password);
+        driver.FindElement(By.Id("loginbtn")).Click();
+        await Task.Delay(2000); // Wait for login to complete
+
+        foreach (var url in urls)
+        {
+            driver.Navigate().GoToUrl(url);
+            await Task.Delay(2000); // Wait for page to load
+
+            // Extract links from elements with class name "activityname"
+            var activityElements = driver.FindElements(By.CssSelector(".activityname a"));
+            foreach (var element in activityElements)
+            {
+                string link = element.GetAttribute("href");
+                activityLinks.Add(link);
+            }
+        }
+
+        // Save activityLinks to a text file
+        string filePath = "activityLinks.txt";
+        await File.WriteAllLinesAsync(filePath, activityLinks);
+
+        driver.Quit();
+    }
+
+private async Task<byte[]> DownloadFileContent(string fileUrl)
     {
         var response = await _httpClient.GetAsync(fileUrl);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsByteArrayAsync();
     }
+    public class Course
+    {
+        public int id { get; set; }
+        public string fullname { get; set; }
+        public string summary { get; set; }
+    }
 
-
+    public class CourseResponse
+    {
+        public List<Course> courses { get; set; }
+    }
+    public string SanitizeFileName(string fileName)
+    {
+        return string.Join("_", fileName.Split(Path.GetInvalidFileNameChars()));
+    }
 
 
     private class TokenResponse
