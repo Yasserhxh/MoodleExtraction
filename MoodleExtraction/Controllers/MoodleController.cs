@@ -74,7 +74,25 @@ public class MoodleController : ControllerBase
         }
 
     }
+    [HttpGet("GetQuizByCourseModuleId")]
 
+    public async Task<JObject> GetQuizByCourseModuleId(int cmid)
+    {
+        var function = "mod_quiz_get_quizzes_by_courses";
+        var url = $"webservice/rest/server.php?wstoken=d51da09b28c81e15819aa0460abe3710&wsfunction={function}&moodlewsrestformat=json&courseids[0]={cmid}";
+
+        var result = await _moodleClient.GetCourseQuiz(url);
+
+        foreach (var quiz in result["quizzes"])
+        {
+            if ((int)quiz["cmid"] == cmid)
+            {
+                return (JObject)quiz;
+            }
+        }
+
+        return null;
+    }
 
     [HttpGet("download/{courseId}")]
     public async Task<IActionResult> DownloadCourse(string token, int courseId)
@@ -433,6 +451,13 @@ public class MoodleClient
         response.EnsureSuccessStatusCode();
         var responseContent = await response.Content.ReadAsStringAsync();
         return JsonSerializer.Deserialize<object>(responseContent)!;
+    }
+    public async Task<JObject> GetCourseQuiz(string url)
+    {
+        var response = await _httpClient.GetStringAsync(url);
+        var result = JObject.Parse(response);
+        return result;
+
     }
 
     public async Task<dynamic> DownloadCourseContentCateg(string token, int categoryId)
