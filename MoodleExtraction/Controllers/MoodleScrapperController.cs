@@ -55,7 +55,7 @@ public class MoodleScraperController : ControllerBase
                         string sanitizedCourseName = SanitizeFileName(courseName);
 
                         // Create the directory structure
-                        string courseDirectory = Path.Combine("1ere APIC", "Mathematique", sanitizedCourseName);
+                        string courseDirectory = Path.Combine("1ere APIC", "SVT", sanitizedCourseName);
                         Directory.CreateDirectory(courseDirectory);
 
                         // Step 4: Navigate to the course page and extract relevant content
@@ -239,6 +239,22 @@ public class MoodleScraperController : ControllerBase
             await Task.Delay(2000); // Wait for the test page to load
 
             string testPageHtml = driver.PageSource;
+
+            // Remove unwanted HTML elements
+            testPageHtml = RemoveUnwantedHtmlElements(testPageHtml);
+            // Create directories for scripts, styles, and images
+            string scriptsDirectory = Path.Combine(sectionDirectory, "scripts");
+            string stylesDirectory = Path.Combine(sectionDirectory, "styles");
+            string imagesDirectory = Path.Combine(sectionDirectory, "images");
+
+            Directory.CreateDirectory(scriptsDirectory);
+            Directory.CreateDirectory(stylesDirectory);
+            Directory.CreateDirectory(imagesDirectory);
+
+            // Download and replace external resources
+            testPageHtml = await DownloadAndReplaceResources(driver, testPageHtml, scriptsDirectory, stylesDirectory, imagesDirectory);
+
+            // Save the modified HTML content to a file
             string testFilePath = Path.Combine(sectionDirectory, $"{activityName}.html");
             await System.IO.File.WriteAllTextAsync(testFilePath, testPageHtml);
         }
@@ -247,6 +263,189 @@ public class MoodleScraperController : ControllerBase
             // Handle the case where the continue button is not found
         }
     }
+    private string RemoveUnwantedHtmlElements(string htmlContent)
+    {
+        // Load the HTML document
+        HtmlDocument document = new HtmlDocument();
+        document.LoadHtml(htmlContent);
+
+        // Define a list of XPath expressions for elements to be removed
+        string[] xpathsToRemove = {
+        "//div[@id='fsmod-header']",
+        "//div[@class='container-fluid tertiary-navigation']",
+        "//div[@class='theme-coursenav flexcols onlynext']",
+        "//div[@id='course-panel']",
+        "//div[@id='fsmod-sidebar']"
+    };
+
+        // Remove the elements
+        foreach (string xpath in xpathsToRemove)
+        {
+            var nodesToRemove = document.DocumentNode.SelectNodes(xpath);
+            if (nodesToRemove != null)
+            {
+                foreach (var node in nodesToRemove)
+                {
+                    node.Remove();
+                }
+            }
+        }
+
+        // Return the modified HTML content
+        return document.DocumentNode.OuterHtml;
+    }
+    private async Task<string> DownloadAndReplaceResources(IWebDriver driver, string htmlContent, string scriptsDirectory, string stylesDirectory, string imagesDirectory)
+    {
+        // Patterns to match script, link, img, favicon, and any URL starting with https://m3.inpt.ac.ma/
+        string scriptPattern = @"<script.*?src=[""'](.*?)[""'].*?></script>";
+        string cssPattern = @"<link.*?href=[""'](.*?)[""'].*?/>";
+        string imgPattern = @"<img.*?src=[""'](.*?)[""'].*?>";
+        string faviconPattern = @"<link.*?rel=[""']shortcut icon[""'].*?href=[""'](.*?)[""'].*?/>";
+        string generalPattern = @"https://m3.inpt.ac.ma/.*?[""'\s>]"; // Matches any URL starting with https://m3.inpt.ac.ma/
+
+        // Download and replace scripts
+        htmlContent = await DownloadAndReplace(driver, htmlContent, scriptPattern, "src", scriptsDirectory);
+
+        // Download and replace CSS files
+        htmlContent = await DownloadAndReplace(driver, htmlContent, cssPattern, "href", stylesDirectory);
+
+        // Download and replace images
+        htmlContent = await DownloadAndReplaceImages(driver, htmlContent, imagesDirectory);
+
+        // Download and replace favicon
+        htmlContent = await DownloadAndReplace(driver, htmlContent, faviconPattern, "href", imagesDirectory);
+
+        // Download and replace any general resources starting with https://m3.inpt.ac.ma/
+        htmlContent = await DownloadAndReplace(driver, htmlContent, generalPattern, null, imagesDirectory);
+
+        return htmlContent;
+    }
+    private async Task<string> DownloadAndReplaceImages(IWebDriver driver, string htmlContent, string imagesDirectory)
+    {
+        var matches = Regex.Matches(htmlContent, @"<img.*?src=[""'](.*?)[""'].*?>", RegexOptions.IgnoreCase);
+
+        foreach (Match match in matches)
+        {
+            string url = match.Groups[1].Value;
+            if (!url.StartsWith("http"))
+            {
+                // Handle relative URLs by making them absolute
+                url = "https://m3.inpt.ac.ma" + url;
+            }
+
+            try
+            {
+                // Open the image URL in a new tab
+                ((IJavaScriptExecutor)driver).ExecuteScript("window.open();");
+                driver.SwitchTo().Window(driver.WindowHandles.Last());
+                driver.Navigate().GoToUrl(url);
+
+                // Wait for the image to load
+                await Task.Delay(2000);
+
+                // Get the file name and save path
+                Uri uri = new Uri(url);
+                string fileName = Path.GetFileName(uri.LocalPath);
+                string filePath = Path.Combine(imagesDirectory, fileName);
+
+                // Trigger download using JavaScript
+                ((IJavaScriptExecutor)driver).ExecuteScript($@"
+                var link = document.createElement('a');
+                link.href = '{url}';
+                link.download = '{fileName}';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);");
+
+                // Replace the URL in the HTML with the relative path
+                string relativePath = Path.Combine(Path.GetFileName(imagesDirectory), fileName).Replace("\\", "/");
+                htmlContent = htmlContent.Replace(url, relativePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to download image: {url}. Error: {ex.Message}");
+            }
+            finally
+            {
+                // Close the current tab and switch back to the original tab
+                driver.Close();
+                driver.SwitchTo().Window(driver.WindowHandles.First());
+            }
+        }
+
+        return htmlContent;
+    }
+
+    private async Task<string> DownloadAndReplace(IWebDriver driver, string htmlContent, string pattern, string attribute, string directory)
+    {
+        var matches = Regex.Matches(htmlContent, pattern, RegexOptions.IgnoreCase);
+
+        foreach (Match match in matches)
+        {
+            string url;
+            if (attribute != null)
+            {
+                url = match.Groups[1].Value;
+            }
+            else
+            {
+                // For the general pattern, extract the full match
+                url = match.Value.TrimEnd('"', '\'', ' ', '>');
+            }
+
+            if (!url.StartsWith("http") && !url.StartsWith("//") && !url.StartsWith("https://m3.inpt.ac.ma/"))
+            {
+                // Skip if the URL is not an absolute, protocol-relative URL, or doesn't start with the specified base URL
+                continue;
+            }
+
+            // Handle protocol-relative URLs
+            if (url.StartsWith("//"))
+            {
+                url = "https:" + url;
+            }
+
+            try
+            {
+                // Open the resource in a new tab
+                ((IJavaScriptExecutor)driver).ExecuteScript("window.open();");
+                driver.SwitchTo().Window(driver.WindowHandles.Last());
+                driver.Navigate().GoToUrl(url);
+
+                // Wait for the page/resource to load
+                await Task.Delay(2000);
+
+                // Get the file name and save path
+                Uri uri = new Uri(url);
+                string fileName = Path.GetFileName(uri.LocalPath);
+                string filePath = Path.Combine(directory, fileName);
+
+                // Download the resource using HttpClient
+                using (HttpClient client = new HttpClient())
+                {
+                    var resourceBytes = await client.GetByteArrayAsync(url);
+                    await System.IO.File.WriteAllBytesAsync(filePath, resourceBytes);
+                }
+
+                // Replace the URL in the HTML with the relative path
+                string relativePath = Path.Combine(Path.GetFileName(directory), fileName).Replace("\\", "/");
+                htmlContent = htmlContent.Replace(url, relativePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to download resource: {url}. Error: {ex.Message}");
+            }
+            finally
+            {
+                // Close the current tab and switch back to the original tab
+                driver.Close();
+                driver.SwitchTo().Window(driver.WindowHandles.First());
+            }
+        }
+
+        return htmlContent;
+    }
+
 
     private async Task DownloadH5PContent(IWebDriver driver, string h5pUrl, string sectionDirectory, string activityName)
     {
@@ -348,7 +547,6 @@ public class MoodleScraperController : ControllerBase
         }
         finally
         {
-            // Close the current tab and switch back to the original tab
             driver.Close();
             driver.SwitchTo().Window(driver.WindowHandles.First());
         }
