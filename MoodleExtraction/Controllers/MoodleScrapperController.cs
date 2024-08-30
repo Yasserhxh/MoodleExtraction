@@ -55,7 +55,7 @@ public class MoodleScraperController : ControllerBase
                         string sanitizedCourseName = SanitizeFileName(courseName);
 
                         // Create the directory structure
-                        string courseDirectory = Path.Combine("1ere APIC", "SVT", sanitizedCourseName);
+                        string courseDirectory = Path.Combine("1ere APIC", "Mathématiques", sanitizedCourseName);
                         Directory.CreateDirectory(courseDirectory);
 
                         // Step 4: Navigate to the course page and extract relevant content
@@ -115,7 +115,7 @@ public class MoodleScraperController : ControllerBase
                 string sectionActivityUrl = activityLinkElement.GetAttribute("href");
 
                 // Process the activity
-                await ScrapeActivity(driver, sectionActivityUrl, sectionById, sectionDirectory);
+                await ScrapeActivity(driver, sectionActivityUrl, sectionById, sectionDirectory, sectionName);
 
                 // Return to the main course page after scraping
                 driver.Navigate().GoToUrl(courseUrl);
@@ -133,7 +133,7 @@ public class MoodleScraperController : ControllerBase
         }
     }
 
-    private async Task ScrapeActivity(IWebDriver driver, string activityUrl, string sectionId, string sectionDirectory)
+    private async Task ScrapeActivity(IWebDriver driver, string activityUrl, string sectionId, string sectionDirectory, string sectionName)
     {
         driver.Navigate().GoToUrl(activityUrl);
 
@@ -143,6 +143,7 @@ public class MoodleScraperController : ControllerBase
 
         await Task.Delay(2000); // Wait for any additional loading
 
+      
         // Try to locate elements, handling stale element reference exceptions
         List<IWebElement> sectionElements = new List<IWebElement>();
         bool elementsFound = false;
@@ -154,6 +155,32 @@ public class MoodleScraperController : ControllerBase
             {
                 var section = driver.FindElement(By.Id(sectionId));
                 var sec = section.FindElement(By.CssSelector("div.format_tiles_section_content"));
+
+
+
+                // Extract and save the HTML content of the div with the class "format_tiles_section_content"
+                try
+                {
+                    var sectionContentDiv = driver.FindElement(By.CssSelector("div.format_tiles_section_content"));
+                    var descriptionDiv = sectionContentDiv.FindElement(By.CssSelector("div.summary"));
+
+                    string sectionContentHtml = descriptionDiv.GetAttribute("outerHTML");
+
+                    // Download images and update paths
+                    sectionContentHtml = await DownloadImagesAndUpdatePaths(driver, sectionContentHtml, sectionDirectory);
+
+                    // Create the HTML file with the section name
+                    string sectionFileName = Path.Combine(sectionDirectory, $"{sectionName}.html");
+                    await System.IO.File.WriteAllTextAsync(sectionFileName, sectionContentHtml);
+
+                    Console.WriteLine($"Section content with images saved to: {sectionFileName}");
+                }
+                catch (NoSuchElementException ex)
+                {
+                    Console.WriteLine($"Element 'format_tiles_section_content' not found: {ex.Message}");
+                }
+
+
                 // Find the first <ul> element within the located div
                 var ulElement = sec.FindElement(By.CssSelector("ul.section.img-text.nosubtiles"));
 
@@ -211,7 +238,7 @@ public class MoodleScraperController : ControllerBase
                     if (!string.IsNullOrEmpty(dataUrl))
                     {
                         // Download the PDF file
-                        await DownloadPdfFile(dataUrl, sectionDirectory);
+                        await DownloadPdfFile(driver, dataUrl, sectionDirectory);
                     }
                 }
             }
@@ -227,6 +254,61 @@ public class MoodleScraperController : ControllerBase
             }
         }
     }
+    private async Task<string> DownloadImagesAndUpdatePaths(IWebDriver driver, string htmlContent, string sectionDirectory)
+    {
+        var matches = Regex.Matches(htmlContent, @"<img.*?src=[""'](.*?)[""'].*?>", RegexOptions.IgnoreCase);
+
+        foreach (Match match in matches)
+        {
+            string imageUrl = match.Groups[1].Value;
+
+            if (!imageUrl.StartsWith("http"))
+            {
+                // Handle relative URLs by making them absolute
+                imageUrl = "https://m3.inpt.ac.ma" + imageUrl;
+            }
+
+            try
+            {
+                // Get the file name from the URL
+                Uri uri = new Uri(imageUrl);
+                string fileName = Path.GetFileName(uri.LocalPath);
+                string filePath = Path.Combine(sectionDirectory, fileName);
+
+                // Open a new tab
+                ((IJavaScriptExecutor)driver).ExecuteScript("window.open();");
+                driver.SwitchTo().Window(driver.WindowHandles.Last());
+
+                // Navigate to the image URL
+                driver.Navigate().GoToUrl(imageUrl);
+
+                // Wait for the image to load
+                await Task.Delay(2000);
+
+                // Use HttpClient to download the image
+                using (HttpClient client = new HttpClient())
+                {
+                    var imageBytes = await client.GetByteArrayAsync(imageUrl);
+                    await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
+                }
+
+                // Close the new tab and switch back to the original tab
+                driver.Close();
+                driver.SwitchTo().Window(driver.WindowHandles.First());
+
+                // Replace the URL in the HTML with the relative path
+                string relativePath = fileName; // Since the image will be in the same directory
+                htmlContent = htmlContent.Replace(imageUrl, relativePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to download image: {imageUrl}. Error: {ex.Message}");
+            }
+        }
+
+        return htmlContent;
+    }
+
     private async Task DownloadTestContent(IWebDriver driver, string testUrl, string sectionDirectory, string activityName)
     {
         driver.Navigate().GoToUrl(testUrl);
@@ -241,7 +323,7 @@ public class MoodleScraperController : ControllerBase
             string testPageHtml = driver.PageSource;
 
             // Remove unwanted HTML elements
-            testPageHtml = RemoveUnwantedHtmlElements(testPageHtml);
+            //testPageHtml = RemoveUnwantedHtmlElements(testPageHtml);
             // Create directories for scripts, styles, and images
             string scriptsDirectory = Path.Combine(sectionDirectory, "scripts");
             string stylesDirectory = Path.Combine(sectionDirectory, "styles");
@@ -298,7 +380,7 @@ public class MoodleScraperController : ControllerBase
     {
         // Patterns to match script, link, img, favicon, and any URL starting with https://m3.inpt.ac.ma/
         string scriptPattern = @"<script.*?src=[""'](.*?)[""'].*?></script>";
-        string cssPattern = @"<link.*?href=[""'](.*?)[""'].*?/>";
+        string cssPattern = @"<link.*?href=['""](?<url>.*?)['""].*?>";
         string imgPattern = @"<img.*?src=[""'](.*?)[""'].*?>";
         string faviconPattern = @"<link.*?rel=[""']shortcut icon[""'].*?href=[""'](.*?)[""'].*?/>";
         string generalPattern = @"https://m3.inpt.ac.ma/.*?[""'\s>]"; // Matches any URL starting with https://m3.inpt.ac.ma/
@@ -316,7 +398,7 @@ public class MoodleScraperController : ControllerBase
         htmlContent = await DownloadAndReplace(driver, htmlContent, faviconPattern, "href", imagesDirectory);
 
         // Download and replace any general resources starting with https://m3.inpt.ac.ma/
-        htmlContent = await DownloadAndReplace(driver, htmlContent, generalPattern, null, imagesDirectory);
+        //htmlContent = await DownloadAndReplace(driver, htmlContent, generalPattern, null, imagesDirectory);
 
         return htmlContent;
     }
@@ -343,10 +425,12 @@ public class MoodleScraperController : ControllerBase
                 // Wait for the image to load
                 await Task.Delay(2000);
 
-                // Get the file name and save path
+                // Get the file name
                 Uri uri = new Uri(url);
                 string fileName = Path.GetFileName(uri.LocalPath);
-                string filePath = Path.Combine(imagesDirectory, fileName);
+                string downloadsDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads");
+
+                string tempFilePath = Path.Combine(downloadsDirectory, fileName);
 
                 // Trigger download using JavaScript
                 ((IJavaScriptExecutor)driver).ExecuteScript($@"
@@ -356,6 +440,13 @@ public class MoodleScraperController : ControllerBase
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);");
+
+                // Wait for the file to appear in the Downloads folder
+                await WaitForFileToDownload(tempFilePath);
+
+                // Move the file to the desired directory
+                string finalFilePath = Path.Combine(imagesDirectory, fileName);
+                System.IO.File.Move(tempFilePath, finalFilePath);
 
                 // Replace the URL in the HTML with the relative path
                 string relativePath = Path.Combine(Path.GetFileName(imagesDirectory), fileName).Replace("\\", "/");
@@ -375,7 +466,20 @@ public class MoodleScraperController : ControllerBase
 
         return htmlContent;
     }
+    private async Task WaitForFileToDownload(string filePath)
+    {
+        int attempts = 0;
+        while (!System.IO.File.Exists(filePath) && attempts < 30)
+        {
+            await Task.Delay(1000); // Wait for 1 second
+            attempts++;
+        }
 
+        if (attempts >= 30)
+        {
+            throw new TimeoutException("File download timed out.");
+        }
+    }
     private async Task<string> DownloadAndReplace(IWebDriver driver, string htmlContent, string pattern, string attribute, string directory)
     {
         var matches = Regex.Matches(htmlContent, pattern, RegexOptions.IgnoreCase);
@@ -551,17 +655,30 @@ public class MoodleScraperController : ControllerBase
             driver.SwitchTo().Window(driver.WindowHandles.First());
         }
     }
-    private async Task DownloadPdfFile(string fileUrl, string directory)
+    private async Task DownloadPdfFile(IWebDriver driver, string fileUrl, string directory)
     {
-        using (var client = new HttpClient())
+        using (var handler = new HttpClientHandler())
         {
-            var fileName = Path.GetFileName(fileUrl);
-            var filePath = Path.Combine(directory, fileName);
+            // Get cookies from the Selenium WebDriver
+            var cookies = driver.Manage().Cookies.AllCookies;
+            handler.CookieContainer = new CookieContainer();
 
-            var pdfBytes = await client.GetByteArrayAsync(fileUrl);
-            await System.IO.File.WriteAllBytesAsync(filePath, pdfBytes);
+            foreach (var cookie in cookies)
+            {
+                handler.CookieContainer.Add(new System.Net.Cookie(cookie.Name, cookie.Value, cookie.Path, cookie.Domain));
+            }
 
-            Console.WriteLine($"PDF downloaded to: {filePath}");
+            using (var client = new HttpClient(handler))
+            {
+
+                var fileName = Path.GetFileName(fileUrl);
+                var filePath = Path.Combine(directory, fileName);
+
+                var pdfBytes = await client.GetByteArrayAsync(fileUrl);
+                await System.IO.File.WriteAllBytesAsync(filePath, pdfBytes);
+
+                Console.WriteLine($"PDF downloaded to: {filePath}");
+            }
         }
     }
 
