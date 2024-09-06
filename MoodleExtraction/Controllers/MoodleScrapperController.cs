@@ -77,7 +77,7 @@ namespace MoodleExtraction.Controllers
                             // Update the call to GenerateCourseJson to pass the list of sections
 
                             string sanitizedCourseName = SanitizeFileName(courseName);
-                            string courseDirectory = Path.Combine("1ere APIC", "SVT", sanitizedCourseName);
+                            string courseDirectory = Path.Combine("1ere APIC", "Mathématiques", sanitizedCourseName);
 
                             // **Check if the course directory already exists and contains subfolders**
                             if (Directory.Exists(courseDirectory) && Directory.GetDirectories(courseDirectory).Length > 0)
@@ -109,11 +109,11 @@ namespace MoodleExtraction.Controllers
                         try
                         {
                             // Step 4: Navigate to the course page and extract relevant content
-                            string courseDirectory = Path.Combine("1ere APIC", "SVT", SanitizeFileName(course.Name));
+                            string courseDirectory = Path.Combine("1ere APIC", "Mathématiques", SanitizeFileName(course.Name));
 
                             List<string> sectionDirectories = Directory.GetDirectories(courseDirectory).ToList();
 
-                            await ScrapeCourse(driver, course.Url, Path.Combine("1ere APIC", "SVT", SanitizeFileName(course.Name)));
+                            await ScrapeCourse(driver, course.Url, Path.Combine("1ere APIC", "Mathématiques", SanitizeFileName(course.Name)));
                             // **After scraping, immediately process the course**
                             await ProcessCourseAfterDownload(course.Name, courseDirectory);
 
@@ -125,7 +125,7 @@ namespace MoodleExtraction.Controllers
                         }
                     }
                 }
-                //await UploadToBlobStorageAsync(); // Upload after scraping
+                
 
                 return Ok("Scraping completed successfully.");
             }
@@ -893,7 +893,9 @@ namespace MoodleExtraction.Controllers
                 "//div[@class='theme-coursenav flexcols onlynext']",
                 "//div[@id='course-panel']",
                 "//div[@id='fsmod-sidebar']",
-                "//div[@class='activity-header']"
+                "//div[@class='activity-header']",
+                "//div[@class='submitbtns']",
+                "//div[@class='theme-coursenav flexcols onlynext']"
             };
 
             // Hide the elements by adding a style attribute with 'display: none;'
@@ -1050,7 +1052,7 @@ namespace MoodleExtraction.Controllers
                 {
 
                     var fileName = Path.GetFileName(fileUrl);
-                    var filePath = Path.Combine(directory, fileName);
+                    var filePath = Path.Combine(directory, SanitizeFileName(fileName));
 
                     var pdfBytes = await client.GetByteArrayAsync(fileUrl);
                     await System.IO.File.WriteAllBytesAsync(filePath, pdfBytes);
@@ -1303,7 +1305,7 @@ namespace MoodleExtraction.Controllers
                 ".ttf" => "font/ttf",
                 ".xml" => "application/xml",
                 ".zip" => "application/zip",
-                ".pdf" => "application/pdf",  // Added MIME type for PDF files
+                //".pdf" => "application/pdf",  // Added MIME type for PDF files
                 _ => "application/octet-stream", // Default MIME type for unknown file types
             };
         }
@@ -1385,9 +1387,9 @@ namespace MoodleExtraction.Controllers
                 CourseName = courseName,
                 CourseId = courseId,
                 Photo = "/courses/" + courseName + '/' + photoRelativePath, // Use the first found image path
-                ProfessorId = "dfe910f4-c065-46cd-b23c-265ddc85a8ed", // Static for now
+                //ProfessorId = "dfe910f4-c065-46cd-b23c-265ddc85a8ed", // Static for now
                 CodeNiveau = "2A32101010", // Static for now
-                CodeClasse = "9210d27e-ec40-4568-9fbe-40146f9f1c2f", // Static for now
+                //CodeClasse = "9210d27e-ec40-4568-9fbe-40146f9f1c2f", // Static for now
                 ElementProgrammes = elementProgrammes,
                 Elements = new List<Element>(),
                 id = courseId // Add the 'id' property for Cosmos DB
@@ -1476,7 +1478,7 @@ namespace MoodleExtraction.Controllers
             Console.WriteLine($"Course JSON generated at: {jsonFilePath}");
 
             // Upload JSON to Cosmos DB
-            //await UploadJsonToCosmosDb(courseJson);
+            await UploadJsonToCosmosDb(courseJson);
         }
 
         private async Task UploadJsonToCosmosDb(CourseJson courseJson)

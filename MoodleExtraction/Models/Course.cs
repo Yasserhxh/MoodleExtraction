@@ -2,12 +2,12 @@
 public class CourseJson
 {
     public string? CourseName { get; set; }
-    public string Description { get; set; } = "SVT";
+    //public string Description { get; set; } = "SVT";
     public string? CourseId { get; set; }
     public string? id { get; set; }
     public string? Photo { get; set; }
-    public string Progession { get; set; } = "0";
-    public string Status { get; set; } = "en cours";
+    //public string Progession { get; set; } = "0";
+    //public string Status { get; set; } = "en cours";
     public string? ProfessorId { get; set; }
     public string? CodeNiveau { get; set; }
     public string? CodeClasse { get; set; }
